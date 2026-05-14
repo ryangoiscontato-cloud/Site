@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude — AI by Anthropic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Custom Properties ─────────────────────────────────── */
+    :root {
+      --bg-base:       #0a0a0f;
+      --bg-surface:    #0d0d1a;
+      --bg-card:       rgba(255,255,255,0.04);
+      --bg-card-hover: rgba(255,255,255,0.08);
+      --coral:         #E87040;
+      --coral-light:   #FF8C60;
+      --purple:        #8B5CF6;
+      --purple-light:  #A78BFA;
+      --text-primary:  #F5F5F0;
+      --text-muted:    #9CA3AF;
+      --text-dim:      #6B7280;
+      --border:        rgba(255,255,255,0.08);
+      --border-hover:  rgba(255,255,255,0.15);
+      --glow-coral:    rgba(232,112,64,0.25);
+      --glow-purple:   rgba(139,92,246,0.25);
+      --radius-sm:     8px;
+      --radius-md:     16px;
+      --radius-lg:     24px;
+      --radius-xl:     32px;
+      --transition:    0.3s cubic-bezier(0.4,0,0.2,1);
+      --font:          'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: var(--font);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── Custom Scrollbar ──────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(var(--coral), var(--purple));
+      border-radius: 3px;
+    }
+
+    /* ─── Navigation ────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 0 5vw;
+      height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(10,10,15,0);
+      backdrop-filter: blur(0px);
+      border-bottom: 1px solid transparent;
+      transition: background 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease;
+    }
+    nav.scrolled {
+      background: rgba(10,10,15,0.75);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom-color: var(--border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--text-primary);
+      font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em;
+    }
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--coral), var(--purple));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 2rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem; font-weight: 500;
+      transition: color var(--transition);
+    }
+    .nav-links a:hover { color: var(--text-primary); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--coral), var(--purple));
+      color: #fff !important;
+      padding: 8px 20px; border-radius: var(--radius-sm);
+      font-weight: 600 !important;
+    }
+    .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+    .nav-mobile-toggle {
+      display: none;
+      flex-direction: column; gap: 5px; cursor: pointer; padding: 4px;
+    }
+    .nav-mobile-toggle span {
+      display: block; width: 24px; height: 2px;
+      background: var(--text-primary); border-radius: 2px;
+      transition: var(--transition);
+    }
+
+    /* ─── Hero ──────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100svh;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      padding: 120px 5vw 80px;
+    }
+    #hero-canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    .hero-orb-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--coral) 0%, transparent 70%);
+      top: -100px; left: -150px;
+      animation-delay: 0s;
+    }
+    .hero-orb-2 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, var(--purple) 0%, transparent 70%);
+      bottom: -100px; right: -100px;
+      animation-delay: -4s;
+    }
+    .hero-orb-3 {
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, var(--coral-light) 0%, transparent 70%);
+      top: 40%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -2s;
+      opacity: 0.15;
+    }
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      33%       { transform: translateY(-30px) scale(1.05); }
+      66%       { transform: translateY(20px) scale(0.97); }
+    }
+    .hero-content {
+      position: relative; z-index: 2;
+      max-width: 860px; text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(232,112,64,0.12);
+      border: 1px solid rgba(232,112,64,0.3);
+      color: var(--coral-light);
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 16px; border-radius: 100px;
+      margin-bottom: 2rem;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--coral);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.7); }
+    }
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--coral-light) 60%, var(--purple-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-title .cursor {
+      display: inline-block;
+      width: 3px; height: 0.85em;
+      background: var(--coral);
+      margin-left: 4px;
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+      -webkit-text-fill-color: var(--coral);
+      border-radius: 2px;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      color: var(--text-muted);
+      max-width: 600px; margin: 0 auto 2.5rem;
+      font-weight: 400; line-height: 1.7;
+    }
+    .hero-sub strong { color: var(--text-primary); font-weight: 600; }
+    .hero-actions {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1rem; flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: var(--radius-md);
+      font-size: 0.95rem; font-weight: 600;
+      text-decoration: none; cursor: pointer; border: none;
+      transition: all var(--transition);
+      position: relative; overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.1);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .btn:hover::before { opacity: 1; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--coral), var(--purple));
+      color: #fff;
+      box-shadow: 0 8px 32px var(--glow-coral);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px var(--glow-coral);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+    .hero-scroll {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em;
+      text-transform: uppercase;
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+    .hero-scroll svg { opacity: 0.5; }
+    @keyframes scrollBounce {
+      0%,100%{ transform: translateX(-50%) translateY(0); }
+      50%    { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* ─── Section Base ──────────────────────────────────────── */
+    section { padding: 100px 5vw; position: relative; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--coral);
+      margin-bottom: 1rem;
+    }
+    .section-label::before {
+      content: '';
+      display: block; width: 24px; height: 1.5px;
+      background: currentColor;
+    }
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.15; margin-bottom: 1rem;
+    }
+    .section-title .grad {
+      background: linear-gradient(90deg, var(--coral), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .section-sub {
+      font-size: 1.05rem; color: var(--text-muted);
+      max-width: 560px; line-height: 1.7;
+    }
+
+    /* Fade-in on scroll */
+    .fade-in {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .fade-in-left {
+      opacity: 0; transform: translateX(-40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in-left.visible { opacity: 1; transform: translateX(0); }
+    .fade-in-right {
+      opacity: 0; transform: translateX(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in-right.visible { opacity: 1; transform: translateX(0); }
+
+    /* Stagger */
+    .stagger > * { transition-delay: calc(var(--i, 0) * 0.1s); }
+
+    /* ─── Wave Dividers ─────────────────────────────────────── */
+    .wave-divider {
+      position: absolute; bottom: -1px; left: 0; right: 0;
+      line-height: 0; z-index: 1;
+    }
+    .wave-divider.top { bottom: auto; top: -1px; transform: rotate(180deg); }
+
+    /* ─── About ─────────────────────────────────────────────── */
+    #about {
+      background: var(--bg-surface);
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem; align-items: center;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .about-visual {
+      position: relative;
+    }
+    .about-card-main {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      backdrop-filter: blur(10px);
+      position: relative; overflow: hidden;
+    }
+    .about-card-main::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--coral), var(--purple));
+    }
+    .about-avatar {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, var(--coral), var(--purple));
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin-bottom: 1.5rem;
+      box-shadow: 0 0 40px var(--glow-coral);
+    }
+    .about-chat {
+      display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem;
+    }
+    .chat-bubble {
+      padding: 12px 16px; border-radius: 14px;
+      font-size: 0.88rem; line-height: 1.5; max-width: 90%;
+    }
+    .chat-bubble.user {
+      background: rgba(232,112,64,0.15);
+      border: 1px solid rgba(232,112,64,0.2);
+      align-self: flex-end;
+      color: var(--text-primary);
+    }
+    .chat-bubble.claude {
+      background: rgba(139,92,246,0.12);
+      border: 1px solid rgba(139,92,246,0.2);
+      color: var(--text-primary);
+    }
+    .chat-typing {
+      display: flex; gap: 4px; align-items: center; padding: 12px 16px;
+      background: rgba(139,92,246,0.12);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: 14px; width: fit-content;
+    }
+    .chat-typing span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--purple-light);
+      animation: typingDot 1.4s infinite;
+    }
+    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingDot {
+      0%,80%,100%{ transform: scale(0.6); opacity:0.4; }
+      40%        { transform: scale(1); opacity:1; }
+    }
+    .about-floating-badge {
+      position: absolute;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+      backdrop-filter: blur(10px);
+      animation: badgeFloat 4s ease-in-out infinite;
+    }
+    .about-floating-badge:nth-child(2) {
+      top: -20px; right: -20px;
+      animation-delay: -1s;
+    }
+    .about-floating-badge:nth-child(3) {
+      bottom: -20px; left: -20px;
+      animation-delay: -2s;
+    }
+    @keyframes badgeFloat {
+      0%,100%{ transform: translateY(0); }
+      50%    { transform: translateY(-8px); }
+    }
+    .badge-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .traits { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 2rem; }
+    .trait {
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 1.25rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      transition: all var(--transition);
+    }
+    .trait:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateX(6px);
+    }
+    .trait-icon {
+      width: 44px; height: 44px; flex-shrink: 0;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+    }
+    .trait-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+    .trait-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* ─── Capabilities ──────────────────────────────────────── */
+    #capabilities { background: var(--bg-base); }
+    .capabilities-header { text-align: center; margin-bottom: 4rem; }
+    .capabilities-header .section-label { justify-content: center; }
+    .capabilities-header .section-sub { margin: 0 auto; }
+    .cap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem; max-width: 1100px; margin: 0 auto;
+    }
+    .cap-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      cursor: default;
+      position: relative; overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+    .cap-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--coral) 0%, var(--purple) 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 0;
+    }
+    .cap-card:hover {
+      transform: translateY(-8px);
+      border-color: transparent;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,112,64,0.3);
+    }
+    .cap-card:hover::after { opacity: 0.07; }
+    .cap-card > * { position: relative; z-index: 1; }
+    .cap-icon {
+      width: 56px; height: 56px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; margin-bottom: 1.25rem;
+      transition: transform 0.4s ease;
+    }
+    .cap-card:hover .cap-icon { transform: scale(1.1) rotate(-5deg); }
+    .cap-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
+    .cap-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
+    .cap-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 1rem; }
+    .cap-tag {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      padding: 3px 10px; border-radius: 100px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .cap-card:hover .cap-tag {
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* ─── How It Works ──────────────────────────────────────── */
+    #how {
+      background: var(--bg-surface);
+      overflow: hidden;
+    }
+    .how-header { text-align: center; margin-bottom: 5rem; }
+    .how-header .section-label { justify-content: center; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem; max-width: 1000px; margin: 0 auto;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute; top: 52px; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--coral), var(--purple), transparent);
+      opacity: 0.4;
+    }
+    .step {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; position: relative; z-index: 1;
+    }
+    .step-num {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 800;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .step-num::before {
+      content: '';
+      position: absolute; inset: -3px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--coral), var(--purple));
+      z-index: -1;
+    }
+    .step-num::after {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      z-index: -1;
+    }
+    .step-icon { font-size: 1.5rem; }
+    .step-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .step-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ─── Principles ────────────────────────────────────────── */
+    #principles { background: var(--bg-base); }
+    .principles-header { text-align: center; margin-bottom: 4rem; }
+    .principles-header .section-label { justify-content: center; }
+    .principles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem; max-width: 960px; margin: 0 auto;
+    }
+    .principle-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      transition: all 0.4s ease;
+      position: relative; overflow: hidden;
+    }
+    .principle-card::before {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    }
+    .principle-card:nth-child(1)::before { background: var(--coral); }
+    .principle-card:nth-child(2)::before {
+      background: linear-gradient(90deg, var(--coral), var(--purple));
+    }
+    .principle-card:nth-child(3)::before { background: var(--purple); }
+    .principle-card:hover {
+      transform: translateY(-6px);
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+    }
+    .principle-icon {
+      width: 80px; height: 80px;
+      border-radius: 50%; margin: 0 auto 1.5rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+    }
+    .principle-card:nth-child(1) .principle-icon {
+      background: rgba(232,112,64,0.12);
+      border: 1px solid rgba(232,112,64,0.2);
+    }
+    .principle-card:nth-child(2) .principle-icon {
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.2);
+    }
+    .principle-card:nth-child(3) .principle-icon {
+      background: rgba(139,92,246,0.12);
+      border: 1px solid rgba(139,92,246,0.2);
+    }
+    .principle-title {
+      font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    .principle-desc {
+      font-size: 0.9rem; color: var(--text-muted); line-height: 1.7;
+    }
+    .counter-wrap { margin: 1.5rem 0; }
+    .counter {
+      font-size: 2.5rem; font-weight: 900;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--coral), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .counter-label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* ─── Testimonials ──────────────────────────────────────── */
+    #testimonials {
+      background: var(--bg-surface);
+      overflow: hidden;
+    }
+    .testimonials-header { text-align: center; margin-bottom: 4rem; }
+    .testimonials-header .section-label { justify-content: center; }
+    .carousel-track-wrap {
+      overflow: hidden; position: relative; max-width: 1200px; margin: 0 auto;
+    }
+    .carousel-track-wrap::before,
+    .carousel-track-wrap::after {
+      content: ''; position: absolute; top: 0; bottom: 0; z-index: 2; width: 80px;
+    }
+    .carousel-track-wrap::before {
+      left: 0;
+      background: linear-gradient(to right, var(--bg-surface), transparent);
+    }
+    .carousel-track-wrap::after {
+      right: 0;
+      background: linear-gradient(to left, var(--bg-surface), transparent);
+    }
+    .carousel-track {
+      display: flex; gap: 1.5rem;
+      animation: carouselScroll 30s linear infinite;
+      width: max-content;
+    }
+    .carousel-track:hover { animation-play-state: paused; }
+    @keyframes carouselScroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .testimonial-card {
+      width: 340px; flex-shrink: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      transition: all var(--transition);
+    }
+    .testimonial-card:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-card-hover);
+      transform: translateY(-4px);
+    }
+    .t-stars {
+      display: flex; gap: 3px; margin-bottom: 1rem;
+      color: var(--coral);
+    }
+    .t-quote {
+      font-size: 0.9rem; color: var(--text-muted);
+      line-height: 1.7; margin-bottom: 1.25rem;
+      font-style: italic;
+    }
+    .t-author { display: flex; align-items: center; gap: 10px; }
+    .t-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 700; flex-shrink: 0;
+    }
+    .t-name { font-size: 0.88rem; font-weight: 600; }
+    .t-role { font-size: 0.78rem; color: var(--text-dim); }
+
+    /* ─── Stats Bar ─────────────────────────────────────────── */
+    #stats { background: var(--bg-base); padding: 60px 5vw; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 2rem; max-width: 900px; margin: 0 auto;
+      text-align: center;
+    }
+    .stat-item {}
+    .stat-num {
+      font-size: 2.5rem; font-weight: 900; letter-spacing: -0.04em;
+      background: linear-gradient(90deg, var(--coral), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+    }
+    .stat-label { font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+    /* ─── CTA Section ───────────────────────────────────────── */
+    #cta {
+      background: var(--bg-base);
+      padding: 120px 5vw;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-orb {
+      position: absolute; width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,112,64,0.15) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: ctaOrb 6s ease-in-out infinite;
+    }
+    @keyframes ctaOrb {
+      0%,100%{ transform: translate(-50%, -50%) scale(1); }
+      50%    { transform: translate(-50%, -50%) scale(1.1); }
+    }
+    .cta-content { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+    .cta-title {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 900; letter-spacing: -0.04em; line-height: 1.1;
+      margin-bottom: 1.25rem;
+    }
+    .cta-sub { font-size: 1.05rem; color: var(--text-muted); margin-bottom: 2.5rem; line-height: 1.7; }
+    .cta-actions { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+
+    /* ─── Footer ────────────────────────────────────────────── */
+    footer {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      padding: 60px 5vw 32px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem; margin-bottom: 3rem;
+    }
+    .footer-brand p {
+      font-size: 0.88rem; color: var(--text-muted);
+      margin-top: 0.75rem; max-width: 280px; line-height: 1.7;
+    }
+    .footer-col h4 {
+      font-size: 0.82rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text-dim); margin-bottom: 1rem;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+    .footer-col ul a {
+      color: var(--text-muted); text-decoration: none;
+      font-size: 0.88rem; transition: color var(--transition);
+    }
+    .footer-col ul a:hover { color: var(--text-primary); }
+    .footer-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+      padding-top: 2rem; border-top: 1px solid var(--border);
+    }
+    .footer-bottom p { font-size: 0.82rem; color: var(--text-dim); }
+    .footer-bottom a { color: var(--coral); text-decoration: none; }
+    .footer-social { display: flex; gap: 12px; }
+    .social-btn {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      text-decoration: none; font-size: 0.85rem;
+      transition: all var(--transition);
+    }
+    .social-btn:hover {
+      background: rgba(232,112,64,0.1);
+      border-color: rgba(232,112,64,0.3);
+      color: var(--coral);
+      transform: translateY(-2px);
+    }
+
+    /* ─── Gradient separator ────────────────────────────────── */
+    .grad-sep {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--coral), var(--purple), transparent);
+      opacity: 0.3;
+    }
+
+    /* ─── Responsive ────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .about-visual { order: -1; }
+      .principles-grid { grid-template-columns: 1fr; max-width: 480px; }
+      .steps::before { display: none; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      nav { padding: 0 4vw; }
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex; flex-direction: column; align-items: flex-start;
+        position: fixed; inset: 68px 0 0;
+        background: rgba(10,10,15,0.97);
+        backdrop-filter: blur(20px);
+        padding: 2rem 4vw; gap: 1.5rem;
+        z-index: 99;
+      }
+      .nav-links.open a { font-size: 1.1rem; }
+      .nav-mobile-toggle { display: flex; }
+      section { padding: 70px 5vw; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; gap: 2.5rem; }
+      .hero-title { letter-spacing: -0.03em; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Navigation ─── -->
+  <nav id="main-nav">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">✦</div>
+      Claude
+    </a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#capabilities">Capabilities</a></li>
+      <li><a href="#how">How it Works</a></li>
+      <li><a href="#principles">Principles</a></li>
+      <li><a href="#cta" class="nav-cta">Try Claude</a></li>
+    </ul>
+    <div class="nav-mobile-toggle" id="mobile-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- ─── Hero ─── -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Built by Anthropic · AI Safety Research
+      </div>
+      <h1 class="hero-title" id="hero-title">
+        <span id="typed-text"></span><span class="cursor" id="cursor"></span>
+      </h1>
+      <p class="hero-sub">
+        A next-generation AI assistant that's <strong>genuinely helpful</strong>,
+        remarkably <strong>capable</strong>, and deeply committed to being
+        <strong>safe and honest</strong>.
+      </p>
+      <div class="hero-actions">
+        <a href="#cta" class="btn btn-primary">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Start for free
+        </a>
+        <a href="#capabilities" class="btn btn-secondary">
+          Explore capabilities
+        </a>
+      </div>
+    </div>
+    <div class="hero-scroll" aria-label="Scroll down">
+      <span>Scroll</span>
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ─── Stats Bar ─── -->
+  <div id="stats">
+    <div class="stats-grid stagger">
+      <div class="stat-item fade-in" style="--i:0">
+        <span class="stat-num" data-target="200" data-suffix="B+">0</span>
+        <span class="stat-label">Parameters</span>
+      </div>
+      <div class="stat-item fade-in" style="--i:1">
+        <span class="stat-num" data-target="100" data-suffix="K">0</span>
+        <span class="stat-label">Context Window</span>
+      </div>
+      <div class="stat-item fade-in" style="--i:2">
+        <span class="stat-num" data-target="95" data-suffix="%">0</span>
+        <span class="stat-label">Safety Score</span>
+      </div>
+      <div class="stat-item fade-in" style="--i:3">
+        <span class="stat-num" data-target="50" data-suffix="M+">0</span>
+        <span class="stat-label">Users Worldwide</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grad-sep"></div>
+
+  <!-- ─── About ─── -->
+  <section id="about">
+    <div class="about-grid">
+      <div class="about-visual fade-in-left">
+        <div style="position:relative;">
+          <div class="about-floating-badge" style="top:-20px;right:-20px;">
+            <span class="badge-dot" style="background:var(--coral)"></span>
+            Response time &lt;1s
+          </div>
+          <div class="about-card-main">
+            <div class="about-avatar">✦</div>
+            <p style="font-size:0.82rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem;">Claude · Online</p>
+            <p style="font-weight:600;font-size:0.95rem;color:var(--text-muted);">How can I help you today?</p>
+            <div class="about-chat">
+              <div class="chat-bubble user">Can you explain quantum computing in simple terms?</div>
+              <div class="chat-bubble claude">Quantum computing uses quantum bits (qubits) that can exist in multiple states simultaneously — unlike classical bits that are either 0 or 1. Think of it like a coin spinning in the air rather than lying flat…</div>
+              <div class="chat-typing"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="about-floating-badge" style="bottom:-20px;left:-20px;">
+            <span class="badge-dot" style="background:var(--purple)"></span>
+            Thinking deeply
+          </div>
+        </div>
+      </div>
+      <div class="about-text fade-in-right">
+        <span class="section-label">Who is Claude?</span>
+        <h2 class="section-title">An AI built for the real world</h2>
+        <p class="section-sub">Claude isn't just a language model — it's a thoughtful collaborator designed to understand nuance, handle complexity, and engage with intellectual honesty.</p>
+        <div class="traits">
+          <div class="trait">
+            <div class="trait-icon" style="background:rgba(232,112,64,0.12);border:1px solid rgba(232,112,64,0.2);">🧠</div>
+            <div>
+              <div class="trait-title">Deeply Thoughtful</div>
+              <div class="trait-desc">Claude reasons carefully through complex problems rather than jumping to answers.</div>
+            </div>
+          </div>
+          <div class="trait">
+            <div class="trait-icon" style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);">💬</div>
+            <div>
+              <div class="trait-title">Genuinely Conversational</div>
+              <div class="trait-desc">Natural dialogue that adapts to your style — whether casual, technical, or creative.</div>
+            </div>
+          </div>
+          <div class="trait">
+            <div class="trait-icon" style="background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.2);">🛡️</div>
+            <div>
+              <div class="trait-title">Reliably Safe</div>
+              <div class="trait-desc">Constitutional AI training ensures Claude behaves helpfully within ethical boundaries.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grad-sep"></div>
+
+  <!-- ─── Capabilities ─── -->
+  <section id="capabilities">
+    <div class="capabilities-header fade-in">
+      <span class="section-label">What Claude Can Do</span>
+      <h2 class="section-title">Built for every task <span class="grad">imaginable</span></h2>
+      <p class="section-sub">From complex reasoning to creative writing, Claude's capabilities span the full spectrum of intellectual work.</p>
+    </div>
+    <div class="cap-grid stagger">
+      <div class="cap-card fade-in" style="--i:0">
+        <div class="cap-icon" style="background:rgba(232,112,64,0.12);border:1px solid rgba(232,112,64,0.2);">✍️</div>
+        <h3 class="cap-title">Writing & Editing</h3>
+        <p class="cap-desc">Draft emails, essays, stories, reports, and marketing copy with a voice that sounds like you — but better.</p>
+        <div class="cap-tags">
+          <span class="cap-tag">Copywriting</span>
+          <span class="cap-tag">Editing</span>
+          <span class="cap-tag">Creative</span>
+        </div>
+      </div>
+      <div class="cap-card fade-in" style="--i:1">
+        <div class="cap-icon" style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);">💻</div>
+        <h3 class="cap-title">Coding & Dev</h3>
+        <p class="cap-desc">Write, review, debug, and explain code across 30+ languages. Claude understands architecture, not just syntax.</p>
+        <div class="cap-tags">
+          <span class="cap-tag">Python</span>
+          <span class="cap-tag">TypeScript</span>
+          <span class="cap-tag">Review</span>
+        </div>
+      </div>
+      <div class="cap-card fade-in" style="--i:2">
+        <div class="cap-icon" style="background:rgba(255,140,96,0.12);border:1px solid rgba(255,140,96,0.2);">📊</div>
+        <h3 class="cap-title">Data Analysis</h3>
+        <p class="cap-desc">Process spreadsheets, interpret statistics, identify trends, and surface insights from complex datasets.</p>
+        <div class="cap-tags">
+          <span class="cap-tag">Statistics</span>
+          <span class="cap-tag">Insights</span>
+          <span class="cap-tag">Viz</span>
+        </div>
+      </div>
+      <div class="cap-card fade-in" style="--i:3">
+        <div class="cap-icon" style="background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.2);">🔬</div>
+        <h3 class="cap-title">Research</h3>
+        <p class="cap-desc">Synthesize papers, summarize literature, compare perspectives, and accelerate academic and professional research.</p>
+        <div class="cap-tags">
+          <span class="cap-tag">Synthesis</span>
+          <span class="cap-tag">Summary</span>
+          <span class="cap-tag">Citations</span>
+        </div>
+      </div>
+      <div class="cap-card fade-in" style="--i:4">
+        <div class="cap-icon" style="background:rgba(232,112,64,0.12);border:1px solid rgba(232,112,64,0.2);">🧮</div>
+        <h3 class="cap-title">Math & Reasoning</h3>
+        <p class="cap-desc">Step-by-step problem solving from algebra to calculus, combinatorics, and logical proofs — showing its work.</p>
+        <div class="cap-tags">
+          <span class="cap-tag">Calculus</span>
+          <span class="cap-tag">Logic</span>
+          <span class="cap-tag">Proofs</span>
+        </div>
+      </div>
+      <div class="cap-card fade-in" style="--i:5">
+        <div class="cap-icon" style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);">🌐</div>
+        <h3 class="cap-title">Conversation</h3>
+        <p class="cap-desc">Brainstorm ideas, work through decisions, get honest feedback, or simply have a thoughtful intellectual discussion.</p>
+        <div class="cap-tags">
+          <span class="cap-tag">Brainstorm</span>
+          <span class="cap-tag">Feedback</span>
+          <span class="cap-tag">Ideas</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grad-sep"></div>
+
+  <!-- ─── How It Works ─── -->
+  <section id="how">
+    <div class="how-header fade-in">
+      <span class="section-label">The Process</span>
+      <h2 class="section-title">Simple to use, <span class="grad">remarkable</span> results</h2>
+    </div>
+    <div class="steps stagger">
+      <div class="step fade-in" style="--i:0">
+        <div class="step-num"><span class="step-icon">💬</span></div>
+        <h3 class="step-title">Ask anything</h3>
+        <p class="step-desc">Type your question, paste your document, or describe your task in plain natural language.</p>
+      </div>
+      <div class="step fade-in" style="--i:1">
+        <div class="step-num"><span class="step-icon">🧠</span></div>
+        <h3 class="step-title">Claude thinks</h3>
+        <p class="step-desc">Using Constitutional AI, Claude reasons through your request carefully and ethically.</p>
+      </div>
+      <div class="step fade-in" style="--i:2">
+        <div class="step-num"><span class="step-icon">✨</span></div>
+        <h3 class="step-title">Get results</h3>
+        <p class="step-desc">Receive clear, nuanced, well-structured responses you can use and build upon immediately.</p>
+      </div>
+      <div class="step fade-in" style="--i:3">
+        <div class="step-num"><span class="step-icon">🔄</span></div>
+        <h3 class="step-title">Iterate together</h3>
+        <p class="step-desc">Refine, clarify, and go deeper. Claude remembers context throughout the conversation.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="grad-sep"></div>
+
+  <!-- ─── Principles ─── -->
+  <section id="principles">
+    <div class="principles-header fade-in">
+      <span class="section-label">Our Commitment</span>
+      <h2 class="section-title">Built on <span class="grad">three pillars</span></h2>
+      <p class="section-sub" style="margin:0 auto;">Anthropic's Constitutional AI framework ensures Claude embodies these principles in every interaction.</p>
+    </div>
+    <div class="principles-grid stagger">
+      <div class="principle-card fade-in" style="--i:0">
+        <div class="principle-icon">🤝</div>
+        <h3 class="principle-title">Helpful</h3>
+        <p class="principle-desc">Claude aims to genuinely assist with real tasks — providing substantive, accurate, and useful responses that make a difference.</p>
+        <div class="counter-wrap">
+          <div class="counter" data-target="98" data-suffix="%">0%</div>
+          <div class="counter-label">User satisfaction rate</div>
+        </div>
+      </div>
+      <div class="principle-card fade-in" style="--i:1">
+        <div class="principle-icon">🛡️</div>
+        <h3 class="principle-title">Harmless</h3>
+        <p class="principle-desc">Trained to avoid generating harmful content, Claude maintains strict safety boundaries while remaining maximally helpful.</p>
+        <div class="counter-wrap">
+          <div class="counter" data-target="99" data-suffix=".9%">0%</div>
+          <div class="counter-label">Safety compliance</div>
+        </div>
+      </div>
+      <div class="principle-card fade-in" style="--i:2">
+        <div class="principle-icon">💡</div>
+        <h3 class="principle-title">Honest</h3>
+        <p class="principle-desc">Claude doesn't make things up. When uncertain, it says so. Epistemic honesty is core to every response.</p>
+        <div class="counter-wrap">
+          <div class="counter" data-target="3" data-suffix="x">0x</div>
+          <div class="counter-label">More accurate than average LLMs</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grad-sep"></div>
+
+  <!-- ─── Testimonials ─── -->
+  <section id="testimonials">
+    <div class="testimonials-header fade-in">
+      <span class="section-label">Use Cases</span>
+      <h2 class="section-title">Loved by people who <span class="grad">get things done</span></h2>
+    </div>
+    <div class="carousel-track-wrap">
+      <div class="carousel-track" id="carousel">
+        <!-- Cards injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <div class="grad-sep"></div>
+
+  <!-- ─── CTA ─── -->
+  <section id="cta">
+    <div class="cta-orb"></div>
+    <div class="cta-content fade-in">
+      <h2 class="cta-title">Ready to experience <br><span style="background:linear-gradient(135deg,var(--coral),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">a smarter future?</span></h2>
+      <p class="cta-sub">Join millions of researchers, developers, writers, and thinkers who use Claude every day to work faster and think deeper.</p>
+      <div class="cta-actions">
+        <a href="https://claude.ai" target="_blank" rel="noopener" class="btn btn-primary" style="font-size:1rem;padding:16px 36px;">
+          Start for free
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="https://anthropic.com" target="_blank" rel="noopener" class="btn btn-secondary">
+          Learn about Anthropic
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ─── -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="nav-logo" href="#" style="margin-bottom:0.5rem;display:inline-flex;">
+          <div class="nav-logo-icon">✦</div>
+          Claude
+        </a>
+        <p>An AI assistant by Anthropic, built to be helpful, harmless, and honest. Advancing AI safety for humanity.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#">Claude.ai</a></li>
+          <li><a href="#">API</a></li>
+          <li><a href="#">Claude for Teams</a></li>
+          <li><a href="#">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="https://anthropic.com" target="_blank">Anthropic</a></li>
+          <li><a href="#">Research</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">Prompt Library</a></li>
+          <li><a href="#">Safety Research</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 <a href="https://anthropic.com" target="_blank">Anthropic, PBC</a>. All rights reserved.</p>
+      <div class="footer-social">
+        <a class="social-btn" href="https://twitter.com/anthropicai" target="_blank" rel="noopener" title="Twitter/X">𝕏</a>
+        <a class="social-btn" href="https://linkedin.com/company/anthropic" target="_blank" rel="noopener" title="LinkedIn">in</a>
+        <a class="social-btn" href="https://github.com/anthropics" target="_blank" rel="noopener" title="GitHub">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.3 9.42 7.88 10.95.58.1.79-.25.79-.56 0-.27-.01-.99-.01-1.95-3.2.69-3.88-1.55-3.88-1.55-.52-1.34-1.28-1.7-1.28-1.7-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.19a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.5 3.17-1.19 3.17-1.19.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.43-2.7 5.41-5.27 5.69.41.35.78 1.06.78 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.67.8.56A11.52 11.52 0 0023.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  // ─── Particle Canvas ──────────────────────────────────────────
+  (function () {
+    const canvas = document.getElementById('hero-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+
+    const CORAL  = [232, 112, 64];
+    const PURPLE = [139, 92, 246];
+
+    function resize() {
+      W = canvas.width  = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+    }
+
+    class Particle {
+      constructor() { this.reset(true); }
+      reset(fresh) {
+        this.x   = Math.random() * W;
+        this.y   = fresh ? Math.random() * H : H + 10;
+        this.r   = Math.random() * 1.8 + 0.4;
+        this.vx  = (Math.random() - 0.5) * 0.4;
+        this.vy  = -(Math.random() * 0.6 + 0.2);
+        this.life    = 0;
+        this.maxLife = Math.random() * 200 + 120;
+        const t = Math.random();
+        this.color = CORAL.map((c, i) => Math.round(c + (PURPLE[i] - c) * t));
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life++;
+        if (this.life > this.maxLife || this.y < -10) this.reset(false);
+      }
+      draw() {
+        const progress = this.life / this.maxLife;
+        const alpha    = Math.sin(progress * Math.PI) * 0.55;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${this.color[0]},${this.color[1]},${this.color[2]},${alpha})`;
+        ctx.fill();
+      }
+    }
+
+    function init() {
+      resize();
+      particles = Array.from({ length: 120 }, () => new Particle());
+      window.addEventListener('resize', resize);
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(loop);
+    }
+
+    init();
+    loop();
+  })();
+
+  // ─── Nav Scroll ───────────────────────────────────────────────
+  const nav = document.getElementById('main-nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 30);
+  }, { passive: true });
+
+  // ─── Mobile Nav Toggle ────────────────────────────────────────
+  document.getElementById('mobile-toggle').addEventListener('click', function () {
+    document.getElementById('nav-links').classList.toggle('open');
+  });
+  document.querySelectorAll('#nav-links a').forEach(a => {
+    a.addEventListener('click', () => {
+      document.getElementById('nav-links').classList.remove('open');
+    });
+  });
+
+  // ─── Typing Animation ─────────────────────────────────────────
+  (function () {
+    const phrases  = ['Meet Claude.', 'Think bigger.', 'Work smarter.', 'Meet Claude.'];
+    const el       = document.getElementById('typed-text');
+    let pi = 0, ci = 0, deleting = false, wait = 0;
+
+    function tick() {
+      const phrase = phrases[pi];
+      if (wait > 0) { wait--; setTimeout(tick, 50); return; }
+
+      if (!deleting) {
+        el.textContent = phrase.slice(0, ++ci);
+        if (ci === phrase.length) { deleting = true; wait = 40; }
+        setTimeout(tick, 80);
+      } else {
+        el.textContent = phrase.slice(0, --ci);
+        if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; wait = 8; }
+        setTimeout(tick, 40);
+      }
+    }
+    setTimeout(tick, 500);
+  })();
+
+  // ─── Intersection Observer (fade-in) ─────────────────────────
+  const observerOpts = { threshold: 0.12, rootMargin: '0px 0px -40px 0px' };
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+  }, observerOpts);
+  document.querySelectorAll('.fade-in, .fade-in-left, .fade-in-right').forEach(el => io.observe(el));
+
+  // ─── Counter Animation ────────────────────────────────────────
+  function animateCounter(el) {
+    const target  = parseFloat(el.dataset.target);
+    const suffix  = el.dataset.suffix || '';
+    const dur     = 1800;
+    const start   = performance.now();
+
+    function step(now) {
+      const t    = Math.min((now - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      const val  = target * ease;
+      el.textContent = (val % 1 === 0 || t === 1 ? Math.round(val) : val.toFixed(1)) + suffix;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const counterIO = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        animateCounter(e.target);
+        counterIO.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('[data-target]').forEach(el => counterIO.observe(el));
+
+  // ─── Testimonials Data & Carousel ────────────────────────────
+  const testimonials = [
+    { quote: "Claude helped me debug a 3-day old problem in 20 minutes. The explanation was clearer than anything I'd read in documentation.", name: "Sarah K.", role: "Senior Engineer · Stripe", avatar: "SK", color: "#E87040" },
+    { quote: "I use Claude to draft first versions of all my long-form content. The quality is genuinely impressive — it gets my voice.", name: "Marcus T.", role: "Content Director · Notion", avatar: "MT", color: "#8B5CF6" },
+    { quote: "For literature reviews, Claude is a game changer. It synthesizes across 50+ papers and surfaces connections I'd have missed.", name: "Dr. Priya N.", role: "Research Scientist · MIT", avatar: "PN", color: "#FF8C60" },
+    { quote: "Claude's ability to explain complex financial models to our clients has been invaluable. It never oversimplifies.", name: "James R.", role: "CFO · FinTech Startup", avatar: "JR", color: "#A78BFA" },
+    { quote: "I rebuilt our onboarding chatbot with Claude's API. Customer satisfaction jumped 40% in the first month.", name: "Lena S.", role: "Product Manager · SaaS", avatar: "LS", color: "#E87040" },
+    { quote: "Teaching programming with Claude is remarkable. It meets students exactly where they are and explains with perfect clarity.", name: "Prof. David C.", role: "CS Instructor · Stanford", avatar: "DC", color: "#8B5CF6" },
+    { quote: "Our legal team uses Claude to summarize contracts. What used to take hours now takes minutes, with better accuracy.", name: "Rachel M.", role: "General Counsel · Scale AI", avatar: "RM", color: "#FF8C60" },
+    { quote: "Claude is the first AI that actually helps me think through strategy rather than just answer questions. A true thought partner.", name: "Yuki T.", role: "Founder · YC W24", avatar: "YT", color: "#A78BFA" },
+  ];
+
+  function buildCarousel() {
+    const track = document.getElementById('carousel');
+    const doubled = [...testimonials, ...testimonials]; // duplicate for seamless loop
+    doubled.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'testimonial-card';
+      card.innerHTML = `
+        <div class="t-stars">${'★'.repeat(5)}</div>
+        <p class="t-quote">"${t.quote}"</p>
+        <div class="t-author">
+          <div class="t-avatar" style="background:${t.color}22;border:1px solid ${t.color}44;color:${t.color}">${t.avatar}</div>
+          <div>
+            <div class="t-name">${t.name}</div>
+            <div class="t-role">${t.role}</div>
+          </div>
+        </div>`;
+      track.appendChild(card);
+    });
+  }
+  buildCarousel();
+
+  // ─── Card Glow on Mouse Move ──────────────────────────────────
+  document.querySelectorAll('.cap-card, .principle-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1);
+      const y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1);
+      card.style.setProperty('--mx', `${x}%`);
+      card.style.setProperty('--my', `${y}%`);
+    });
+  });
+
+  // ─── Smooth stagger for visible children ─────────────────────
+  document.querySelectorAll('.stagger > .fade-in').forEach((el, i) => {
+    el.style.transitionDelay = `${i * 0.08}s`;
+  });
+  </script>
+</body>
+</html>
