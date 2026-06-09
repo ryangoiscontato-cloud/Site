@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultralight — Sistema de Estoque</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo-block">
+                <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="40" height="40" rx="10" fill="#0f2d5e"/>
+                    <path d="M10 28 L20 12 L30 28 Z" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
+                    <circle cx="20" cy="12" r="2.5" fill="#4a9eff"/>
+                </svg>
+                <div>
+                    <span class="logo-name">Ultralight</span>
+                    <span class="logo-sub">Sistema de Estoque</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-entrada" id="btnEntrada">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                    Entrada
+                </button>
+                <button class="btn-saida" id="btnSaida">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+                    Saída
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="nav-tabs">
+        <div class="nav-inner">
+            <button class="tab-btn active" data-tab="dashboard">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
+                Dashboard
+            </button>
+            <button class="tab-btn" data-tab="saldo">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h7a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+                Saldo de Estoque
+            </button>
+            <button class="tab-btn" data-tab="produtos">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
+                Produtos
+            </button>
+            <button class="tab-btn" data-tab="historico">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                Histórico
+            </button>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main-content">
+
+        <!-- DASHBOARD TAB -->
+        <div class="tab-pane active" id="tab-dashboard">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <span class="date-badge" id="currentDate"></span>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card stat-blue">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10l-8-4V7"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total de Produtos</span>
+                        <span class="stat-value" id="statTotalProdutos">0</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-green">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm3.707 8.293a1 1 0 00-1.414-1.414l-4 4a1 1 0 000 1.414l2 2a1 1 0 001.414-1.414L11 12.586l3.707-3.293z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Itens em Estoque</span>
+                        <span class="stat-value" id="statItensEstoque">0</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-orange">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Estoque Baixo</span>
+                        <span class="stat-value" id="statEstoqueBaixo">0</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-purple">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Movimentos Hoje</span>
+                        <span class="stat-value" id="statMovimentos">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Movimentos Recentes</h2>
+                    </div>
+                    <div class="card-body">
+                        <table class="table" id="tabelaRecentes">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Tipo</th>
+                                    <th>Qtd</th>
+                                    <th>Data/Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyRecentes">
+                                <tr class="empty-row">
+                                    <td colspan="4">Nenhum movimento registrado</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Produtos com Baixo Estoque</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="alertasBaixoEstoque">
+                            <p class="empty-msg">Nenhum alerta de estoque baixo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SALDO TAB -->
+        <div class="tab-pane" id="tab-saldo">
+            <div class="page-header">
+                <h1>Saldo de Estoque</h1>
+                <div class="page-header-actions">
+                    <div class="search-box">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                        <input type="text" id="searchSaldo" placeholder="Buscar produto..." />
+                    </div>
+                    <select id="filterCategoria" class="select-input">
+                        <option value="">Todas as categorias</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body no-pad">
+                    <table class="table table-hover" id="tabelaSaldo">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Categoria</th>
+                                <th>Unidade</th>
+                                <th>Estoque Mín.</th>
+                                <th>Saldo Atual</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodySaldo">
+                            <tr class="empty-row">
+                                <td colspan="7">Nenhum produto cadastrado</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUTOS TAB -->
+        <div class="tab-pane" id="tab-produtos">
+            <div class="page-header">
+                <h1>Gerenciar Produtos</h1>
+                <button class="btn-primary" id="btnNovoProduto">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                    Novo Produto
+                </button>
+            </div>
+            <div class="card">
+                <div class="card-body no-pad">
+                    <table class="table table-hover" id="tabelaProdutos">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Categoria</th>
+                                <th>Unidade</th>
+                                <th>Est. Mínimo</th>
+                                <th>Saldo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyProdutos">
+                            <tr class="empty-row">
+                                <td colspan="7">Nenhum produto cadastrado. Clique em "Novo Produto" para começar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORICO TAB -->
+        <div class="tab-pane" id="tab-historico">
+            <div class="page-header">
+                <h1>Histórico de Movimentos</h1>
+                <div class="page-header-actions">
+                    <div class="search-box">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                        <input type="text" id="searchHistorico" placeholder="Buscar por produto..." />
+                    </div>
+                    <select id="filterTipo" class="select-input">
+                        <option value="">Todos os tipos</option>
+                        <option value="entrada">Entrada</option>
+                        <option value="saida">Saída</option>
+                    </select>
+                    <button class="btn-danger-outline" id="btnLimparHistorico">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        Limpar Histórico
+                    </button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body no-pad">
+                    <table class="table table-hover" id="tabelaHistorico">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Produto</th>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                                <th>Observação</th>
+                                <th>Data / Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyHistorico">
+                            <tr class="empty-row">
+                                <td colspan="6">Nenhum movimento registrado</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ===== MODAL: ENTRADA ===== -->
+    <div class="modal-overlay" id="modalEntrada">
+        <div class="modal">
+            <div class="modal-header modal-header-entrada">
+                <div class="modal-title-block">
+                    <div class="modal-icon-entrada">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div>
+                        <h3>Registrar Entrada</h3>
+                        <p>Adicionar itens ao estoque</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="modalEntrada">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="entradaProduto">Produto *</label>
+                    <select id="entradaProduto" class="form-control">
+                        <option value="">— Selecione um produto —</option>
+                    </select>
+                </div>
+                <div class="form-group" id="entradaInfoProduto" style="display:none">
+                    <div class="produto-info-card">
+                        <span>Saldo atual: <strong id="entradaSaldoAtual">0</strong></span>
+                        <span>Unidade: <strong id="entradaUnidade">—</strong></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="entradaQtd">Quantidade *</label>
+                    <input type="number" id="entradaQtd" class="form-control" min="1" placeholder="Digite a quantidade" />
+                </div>
+                <div class="form-group">
+                    <label for="entradaObs">Observação (opcional)</label>
+                    <input type="text" id="entradaObs" class="form-control" placeholder="Ex: Compra de fornecedor, devolução..." />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" data-close="modalEntrada">Cancelar</button>
+                <button class="btn-confirm-entrada" id="btnConfirmarEntrada">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    Confirmar Entrada
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: SAÍDA ===== -->
+    <div class="modal-overlay" id="modalSaida">
+        <div class="modal">
+            <div class="modal-header modal-header-saida">
+                <div class="modal-title-block">
+                    <div class="modal-icon-saida">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div>
+                        <h3>Registrar Saída</h3>
+                        <p>Retirar itens do estoque</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="modalSaida">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="saidaProduto">Produto *</label>
+                    <select id="saidaProduto" class="form-control">
+                        <option value="">— Selecione um produto —</option>
+                    </select>
+                </div>
+                <div class="form-group" id="saidaInfoProduto" style="display:none">
+                    <div class="produto-info-card">
+                        <span>Saldo atual: <strong id="saidaSaldoAtual">0</strong></span>
+                        <span>Unidade: <strong id="saidaUnidade">—</strong></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="saidaQtd">Quantidade *</label>
+                    <input type="number" id="saidaQtd" class="form-control" min="1" placeholder="Digite a quantidade" />
+                </div>
+                <div class="form-group">
+                    <label for="saidaObs">Observação (opcional)</label>
+                    <input type="text" id="saidaObs" class="form-control" placeholder="Ex: Venda, uso interno, descarte..." />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" data-close="modalSaida">Cancelar</button>
+                <button class="btn-confirm-saida" id="btnConfirmarSaida">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    Confirmar Saída
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: NOVO/EDITAR PRODUTO ===== -->
+    <div class="modal-overlay" id="modalProduto">
+        <div class="modal">
+            <div class="modal-header modal-header-produto">
+                <div class="modal-title-block">
+                    <div class="modal-icon-produto">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
+                    </div>
+                    <div>
+                        <h3 id="modalProdutoTitulo">Novo Produto</h3>
+                        <p>Preencha as informações do produto</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="modalProduto">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="produtoEditId" />
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="produtoCodigo">Código *</label>
+                        <input type="text" id="produtoCodigo" class="form-control" placeholder="Ex: PRD-001" />
+                    </div>
+                    <div class="form-group">
+                        <label for="produtoUnidade">Unidade *</label>
+                        <select id="produtoUnidade" class="form-control">
+                            <option value="un">Unidade (un)</option>
+                            <option value="kg">Quilograma (kg)</option>
+                            <option value="g">Grama (g)</option>
+                            <option value="l">Litro (l)</option>
+                            <option value="ml">Mililitro (ml)</option>
+                            <option value="m">Metro (m)</option>
+                            <option value="m²">Metro² (m²)</option>
+                            <option value="cx">Caixa (cx)</option>
+                            <option value="pct">Pacote (pct)</option>
+                            <option value="par">Par (par)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="produtoNome">Nome do Produto *</label>
+                    <input type="text" id="produtoNome" class="form-control" placeholder="Digite o nome do produto" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="produtoCategoria">Categoria</label>
+                        <input type="text" id="produtoCategoria" class="form-control" placeholder="Ex: Eletrônicos, Ferramentas..." />
+                    </div>
+                    <div class="form-group">
+                        <label for="produtoEstoqueMin">Estoque Mínimo</label>
+                        <input type="number" id="produtoEstoqueMin" class="form-control" min="0" value="0" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="produtoSaldoInicial">Saldo Inicial</label>
+                    <input type="number" id="produtoSaldoInicial" class="form-control" min="0" value="0" />
+                    <small class="form-hint">Quantidade inicial em estoque ao cadastrar o produto</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" data-close="modalProduto">Cancelar</button>
+                <button class="btn-primary" id="btnSalvarProduto">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/></svg>
+                    Salvar Produto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: CONFIRMAR EXCLUSÃO ===== -->
+    <div class="modal-overlay" id="modalExcluir">
+        <div class="modal modal-sm">
+            <div class="modal-header modal-header-danger">
+                <div class="modal-title-block">
+                    <div class="modal-icon-danger">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div>
+                        <h3>Excluir Produto</h3>
+                        <p>Esta ação não pode ser desfeita</p>
+                    </div>
+                </div>
+                <button class="modal-close" data-close="modalExcluir">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="msgExcluir">Tem certeza que deseja excluir este produto?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" data-close="modalExcluir">Cancelar</button>
+                <button class="btn-danger" id="btnConfirmarExcluir">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOAST NOTIFICATION ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
