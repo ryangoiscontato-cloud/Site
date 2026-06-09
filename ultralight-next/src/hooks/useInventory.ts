@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Produto, Movimento } from '@/lib/types'
 import { uid } from '@/lib/utils'
-import { buildSeedData } from '@/lib/seed'
 
 const KEYS = { produtos: 'ul_produtos', historico: 'ul_historico' }
 
@@ -23,18 +22,8 @@ export function useInventory() {
   const [hydrated, setHydrated]        = useState(false)
 
   useEffect(() => {
-    const p = load<Produto[]>(KEYS.produtos, [])
-    const h = load<Movimento[]>(KEYS.historico, [])
-    if (p.length === 0) {
-      const seed = buildSeedData()
-      save(KEYS.produtos, seed.produtos)
-      save(KEYS.historico, seed.historico)
-      setProdutosState(seed.produtos)
-      setHistoricoState(seed.historico)
-    } else {
-      setProdutosState(p)
-      setHistoricoState(h)
-    }
+    setProdutosState(load<Produto[]>(KEYS.produtos, []))
+    setHistoricoState(load<Movimento[]>(KEYS.historico, []))
     setHydrated(true)
   }, [])
 

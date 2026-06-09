@@ -16,7 +16,7 @@ const tabs: { id: TabId; label: string; shortLabel: string; icon: React.ReactNod
   },
   {
     id: 'saldo',
-    label: 'Saldo de Estoque',
+    label: 'Saldo',
     shortLabel: 'Saldo',
     icon: (
       <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
@@ -54,14 +54,14 @@ interface NavTabsProps {
 export default function NavTabs({ active, onChange }: NavTabsProps) {
   return (
     <>
-      {/* ── Desktop: top tabs (md+) ── */}
-      <nav className="hidden md:block bg-white border-b border-gray-200 sticky top-16 z-40">
+      {/* ── Desktop top tabs — only on lg+ (1024px) ── */}
+      <nav className="hidden lg:block bg-white border-b border-gray-200 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-6 flex">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
-              className={`inline-flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap relative top-px ${
+              className={`inline-flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-all whitespace-nowrap relative top-px ${
                 active === tab.id
                   ? 'text-blue-700 border-blue-600 font-semibold'
                   : 'text-gray-500 border-transparent hover:text-blue-600 hover:bg-blue-50'
@@ -74,27 +74,27 @@ export default function NavTabs({ active, onChange }: NavTabsProps) {
         </div>
       </nav>
 
-      {/* ── Mobile: bottom nav bar ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
-        <div className="grid grid-cols-4">
+      {/* ── Mobile bottom nav — hidden on lg+ ── */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200"
+        style={{
+          boxShadow: '0 -2px 16px rgba(0,0,0,0.08)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        <div className="grid grid-cols-4 w-full">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
-              className={`flex flex-col items-center justify-center gap-1 py-3 px-1 transition-all active:scale-95 ${
-                active === tab.id
-                  ? 'text-blue-700'
-                  : 'text-gray-400 hover:text-gray-600'
+              className={`flex flex-col items-center justify-center gap-1 pt-3 pb-2 w-full transition-colors active:bg-gray-50 ${
+                active === tab.id ? 'text-blue-700' : 'text-gray-400'
               }`}
             >
-              {/* Icon with active indicator */}
-              <div className={`relative p-1.5 rounded-xl transition-all ${active === tab.id ? 'bg-blue-100' : ''}`}>
+              <div className={`p-1.5 rounded-xl transition-colors ${active === tab.id ? 'bg-blue-100' : ''}`}>
                 {tab.icon}
-                {active === tab.id && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-600 rounded-full" />
-                )}
               </div>
-              <span className="text-[0.65rem] font-semibold leading-none">{tab.shortLabel}</span>
+              <span className="text-[0.6rem] font-semibold leading-none">{tab.shortLabel}</span>
             </button>
           ))}
         </div>
