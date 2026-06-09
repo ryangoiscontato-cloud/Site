@@ -99,7 +99,7 @@ export default function InventoryApp() {
       <Header onEntrada={handleEntrada} onSaida={handleSaida} />
       <NavTabs active={tab} onChange={setTab} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-7 pb-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-7 pb-24 md:pb-16">
         {tab === 'dashboard' && <Dashboard  produtos={produtos} historico={historico} />}
         {tab === 'saldo'     && <SaldoEstoque produtos={produtos} />}
         {tab === 'produtos'  && (
