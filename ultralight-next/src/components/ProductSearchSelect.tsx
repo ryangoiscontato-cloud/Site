@@ -7,17 +7,16 @@ interface Props {
   produtos: Produto[]
   value: string
   onChange: (id: string) => void
-  error?: boolean
+  hasError?: boolean
 }
 
-export default function ProductSearchSelect({ produtos, value, onChange, error }: Props) {
+export default function ProductSearchSelect({ produtos, value, onChange, hasError }: Props) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const selected = produtos.find(p => p.id === value)
   const q = query.trim()
 
-  // Only show results after the user has typed something
   const filtered = q
     ? produtos.filter(p =>
         p.nome.toLowerCase().includes(q.toLowerCase()) ||
@@ -26,7 +25,7 @@ export default function ProductSearchSelect({ produtos, value, onChange, error }
       )
     : []
 
-  function select(id: string) {
+  function pick(id: string) {
     onChange(id)
     setQuery('')
   }
@@ -37,10 +36,9 @@ export default function ProductSearchSelect({ produtos, value, onChange, error }
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  // ── Selected state ────────────────────────────────────────────────────────
   if (selected) {
     return (
-      <div className={`flex items-center gap-3 px-3 py-3 rounded-xl border ${error ? 'border-red-400 bg-red-50' : 'border-blue-300 bg-blue-50'}`}>
+      <div className={`flex items-center gap-3 px-3 py-3 rounded-xl border ${hasError ? 'border-red-400 bg-red-50' : 'border-blue-300 bg-blue-50'}`}>
         <div className="flex-1 min-w-0">
           <code className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-mono font-semibold">{selected.codigo}</code>
           <p className="font-semibold text-gray-900 text-sm mt-1 truncate">{selected.nome}</p>
@@ -60,10 +58,8 @@ export default function ProductSearchSelect({ produtos, value, onChange, error }
     )
   }
 
-  // ── Search state ──────────────────────────────────────────────────────────
   return (
     <div className="space-y-1.5">
-      {/* Search input */}
       <div className="relative">
         <svg
           className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
@@ -77,7 +73,7 @@ export default function ProductSearchSelect({ produtos, value, onChange, error }
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Buscar por nome, código ou categoria..."
-          className={`form-field pl-9 pr-9 ${error ? 'border-red-400 ring-2 ring-red-100' : ''}`}
+          className={`form-field pl-9 pr-9 ${hasError ? 'border-red-400 ring-2 ring-red-100' : ''}`}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
@@ -95,14 +91,12 @@ export default function ProductSearchSelect({ produtos, value, onChange, error }
         )}
       </div>
 
-      {/* Hint when empty */}
       {!q && (
         <p className="text-xs text-gray-400 px-1">
           Digite o nome, código ou categoria do produto para buscar.
         </p>
       )}
 
-      {/* Results list — only shown when user is typing */}
       {q && (
         <div className="border border-gray-200 rounded-xl overflow-hidden">
           {filtered.length === 0 ? (
@@ -118,7 +112,7 @@ export default function ProductSearchSelect({ produtos, value, onChange, error }
                   <button
                     key={p.id}
                     type="button"
-                    onClick={() => select(p.id)}
+                    onClick={() => pick(p.id)}
                     className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-blue-50 active:bg-blue-100 transition-colors"
                   >
                     <code className="text-[0.7rem] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-mono font-semibold flex-shrink-0">

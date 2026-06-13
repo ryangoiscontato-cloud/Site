@@ -45,10 +45,10 @@ export function useInventory() {
   }, [produtos, historico, setProdutos, setHistorico])
 
   // ── Saída ─────────────────────────────────────────────────────────────────
-  const registrarSaida = useCallback((produtoId: string, qtd: number, obs: string) => {
+  const registrarSaida = useCallback((produtoId: string, qtd: number, obs: string, responsavel?: string, empresaDestino?: string) => {
     setProdutos(produtos.map(p => p.id === produtoId ? { ...p, saldo: p.saldo - qtd } : p))
     const produto = produtos.find(p => p.id === produtoId)!
-    setHistorico([...historico, { id: uid(), produtoId, produtoNome: produto.nome, tipo: 'saida', qtd, obs, data: new Date().toISOString() }])
+    setHistorico([...historico, { id: uid(), produtoId, produtoNome: produto.nome, tipo: 'saida', qtd, obs, data: new Date().toISOString(), responsavel, empresaDestino }])
   }, [produtos, historico, setProdutos, setHistorico])
 
   // ── Produto CRUD ──────────────────────────────────────────────────────────

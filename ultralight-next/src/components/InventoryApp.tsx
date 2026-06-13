@@ -49,11 +49,11 @@ export default function InventoryApp() {
     toast(`Entrada de ${qtd} ${p.unidade} de "${p.nome}" registrada!`, 'success')
   }
 
-  function handleConfirmarSaida(produtoId: string, qtd: number, obs: string) {
+  function handleConfirmarSaida(produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) {
     const p = produtos.find(x => x.id === produtoId)!
-    registrarSaida(produtoId, qtd, obs)
+    registrarSaida(produtoId, qtd, obs, responsavel, empresaDestino)
     setModalSaida(false)
-    toast(`Saída de ${qtd} ${p.unidade} de "${p.nome}" registrada!`, 'success')
+    toast(`Transferência de ${qtd} ${p.unidade} de "${p.nome}" para ${empresaDestino} registrada!`, 'success')
   }
 
   function handleSalvarProduto(dados: Omit<Produto, 'id'>, editId?: string) {
@@ -124,7 +124,7 @@ export default function InventoryApp() {
         open={modalSaida}
         produtos={produtos}
         onClose={() => setModalSaida(false)}
-        onConfirm={handleConfirmarSaida}
+        onConfirm={(produtoId, qtd, obs, responsavel, empresaDestino) => handleConfirmarSaida(produtoId, qtd, obs, responsavel, empresaDestino)}
       />
       <ModalProduto
         open={modalProduto}

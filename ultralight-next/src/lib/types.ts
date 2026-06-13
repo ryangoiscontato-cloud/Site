@@ -16,6 +16,9 @@ export interface Movimento {
   qtd: number
   obs: string
   data: string
+  // Campos de transferência (saída)
+  responsavel?: string
+  empresaDestino?: string
 }
 
 export type TabId = 'dashboard' | 'saldo' | 'produtos' | 'historico'
