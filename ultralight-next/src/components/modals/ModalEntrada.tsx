@@ -67,7 +67,7 @@ export default function ModalEntrada({ open, produtos, onClose, onConfirm }: Pro
               produtos={produtos}
               value={produtoId}
               onChange={id => { setProdutoId(id); setErrors(e => ({ ...e, produto: '' })) }}
-              error={!!errors.produto}
+              hasError={!!errors.produto}
             />
             {errors.produto && <p className="field-error">{errors.produto}</p>}
           </div>

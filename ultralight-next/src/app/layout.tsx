@@ -5,7 +5,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-}
+};
 
 export const metadata: Metadata = {
   title: "Ultralight — Sistema de Estoque",
@@ -16,12 +16,6 @@ export const metadata: Metadata = {
     title: 'Ultralight',
     statusBarStyle: 'default',
   },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,   // prevents pinch-zoom / auto-zoom on input focus
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
