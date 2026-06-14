@@ -6,6 +6,13 @@ export interface Produto {
   unidade: string
   estoqueMin: number
   saldo: number
+  codigoBarras?: string
+}
+
+export interface Usuario {
+  id: string
+  username: string
+  role: 'admin' | 'user'
 }
 
 export interface Movimento {
@@ -19,6 +26,9 @@ export interface Movimento {
   // Campos de transferência (saída)
   responsavel?: string
   empresaDestino?: string
+  // Usuário que registrou o movimento
+  usuarioId?: string
+  usuarioNome?: string
 }
 
 export type TabId = 'dashboard' | 'saldo' | 'produtos' | 'historico'

@@ -1,0 +1,69 @@
+-- ============================================================================
+-- ULTRALIGHT — Gestão de Estoque · Configuração do Supabase
+-- ----------------------------------------------------------------------------
+-- Como usar:
+--   1. Acesse https://app.supabase.com -> seu projeto -> SQL Editor
+--   2. Cole TODO este arquivo e clique em "Run"
+--   3. Copie a URL e a anon key (Settings -> API) para o .env.local
+-- ============================================================================
+
+-- 1. Tabelas -----------------------------------------------------------------
+create table if not exists usuarios (
+  id uuid primary key default gen_random_uuid(),
+  username text unique not null,
+  senha_hash text not null,
+  role text not null default 'user',
+  created_at timestamptz default now()
+);
+
+create table if not exists produtos (
+  id text primary key,
+  codigo text unique not null,
+  nome text not null,
+  categoria text default '',
+  unidade text not null default 'un',
+  estoque_min int not null default 0,
+  saldo int not null default 0,
+  codigo_barras text default '',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists historico (
+  id text primary key,
+  produto_id text,
+  produto_nome text not null,
+  tipo text not null,
+  qtd int not null,
+  obs text default '',
+  data timestamptz not null default now(),
+  responsavel text,
+  empresa_destino text,
+  usuario_id uuid,
+  usuario_nome text
+);
+
+-- 2. Desabilitar Row Level Security (ferramenta interna) ---------------------
+alter table usuarios  disable row level security;
+alter table produtos  disable row level security;
+alter table historico disable row level security;
+
+-- 3. Habilitar realtime (sincronização entre dispositivos) -------------------
+-- (Ignora erro caso a tabela já esteja na publicação)
+do $$
+begin
+  alter publication supabase_realtime add table produtos;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table historico;
+exception when duplicate_object then null;
+end $$;
+
+-- 4. Usuário admin RYAN (senha: 1234) ----------------------------------------
+-- O hash abaixo é o SHA-256 de 'ultralight_2024_1234'.
+insert into usuarios (username, senha_hash, role)
+values ('RYAN', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'admin')
+on conflict (username) do nothing;

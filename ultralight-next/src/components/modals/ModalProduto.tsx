@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import type { Produto } from '@/lib/types'
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 
 interface Props {
   open: boolean
@@ -20,6 +23,8 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
   const [unidade,    setUnidade]    = useState('un')
   const [estoqueMin, setEstoqueMin] = useState('0')
   const [saldoIni,   setSaldoIni]   = useState('0')
+  const [codigoBarras, setCodigoBarras] = useState('')
+  const [scanning,   setScanning]   = useState(false)
   const [errors,     setErrors]     = useState<Record<string, string>>({})
 
   const isEdit = !!produto
@@ -30,8 +35,10 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
     if (produto) {
       setCodigo(produto.codigo); setNome(produto.nome); setCategoria(produto.categoria || '')
       setUnidade(produto.unidade); setEstoqueMin(String(produto.estoqueMin)); setSaldoIni(String(produto.saldo))
+      setCodigoBarras(produto.codigoBarras || '')
     } else {
       setCodigo(''); setNome(''); setCategoria(''); setUnidade('un'); setEstoqueMin('0'); setSaldoIni('0')
+      setCodigoBarras('')
     }
   }, [open, produto])
 
@@ -50,7 +57,7 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
     if (Object.keys(errs).length) { setErrors(errs); return }
 
     onSalvar(
-      { codigo: codigo.trim(), nome: nome.trim(), categoria: categoria.trim(), unidade, estoqueMin: Number(estoqueMin) || 0, saldo: Number(saldoIni) || 0 },
+      { codigo: codigo.trim(), nome: nome.trim(), categoria: categoria.trim(), unidade, estoqueMin: Number(estoqueMin) || 0, saldo: Number(saldoIni) || 0, codigoBarras: codigoBarras.trim() },
       produto?.id
     )
   }
@@ -59,9 +66,9 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
 
   return (
     <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box animate-slide-up">
+      <div className="modal-box-scroll animate-slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 bg-blue-50 border-b border-blue-100 rounded-t-2xl">
+        <div className="flex items-center justify-between px-6 py-5 bg-blue-50 border-b border-blue-100 rounded-t-2xl sticky top-0 z-10">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
               <svg className="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
@@ -100,6 +107,31 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
             {errors.nome && <p className="field-error">{errors.nome}</p>}
           </div>
 
+          <div>
+            <label className="field-label">Código de Barras <span className="text-gray-400 font-normal">(opcional)</span></label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={codigoBarras}
+                onChange={e => setCodigoBarras(e.target.value)}
+                placeholder="Escaneie ou digite o código"
+                className="form-field flex-1"
+                inputMode="numeric"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                onClick={() => setScanning(true)}
+                title="Escanear código de barras"
+                className="flex-shrink-0 w-11 flex items-center justify-center rounded-lg bg-blue-700 hover:bg-blue-800 text-white transition-colors"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" d="M6 5v14M10 5v14M14 5v14M18 5v14"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="field-label">Categoria</label>
@@ -132,6 +164,13 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
           </button>
         </div>
       </div>
+
+      {scanning && (
+        <BarcodeScanner
+          onScan={code => { setCodigoBarras(code); setScanning(false) }}
+          onClose={() => setScanning(false)}
+        />
+      )}
     </div>
   )
 }

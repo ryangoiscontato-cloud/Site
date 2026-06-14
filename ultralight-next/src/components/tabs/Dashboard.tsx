@@ -1,20 +1,17 @@
 'use client'
 
+import { useState } from 'react'
 import type { Produto, Movimento } from '@/lib/types'
 import { fmtDate, todayLong } from '@/lib/utils'
+import MovimentoDetailModal from '@/components/modals/MovimentoDetailModal'
 
 interface Props {
   produtos: Produto[]
   historico: Movimento[]
 }
 
-function StatusBadge({ p }: { p: Produto }) {
-  if (p.saldo === 0) return <span className="badge-red">Zerado</span>
-  if (p.estoqueMin > 0 && p.saldo <= p.estoqueMin) return <span className="badge-orange">Estoque baixo</span>
-  return <span className="badge-green">Normal</span>
-}
-
 export default function Dashboard({ produtos, historico }: Props) {
+  const [selected, setSelected] = useState<Movimento | null>(null)
   const hoje = new Date().toDateString()
   const totalItens  = produtos.reduce((s, p) => s + p.saldo, 0)
   const baixo       = produtos.filter(p => p.saldo === 0 || (p.estoqueMin > 0 && p.saldo <= p.estoqueMin))
@@ -81,7 +78,7 @@ export default function Dashboard({ produtos, historico }: Props) {
                 {recent.length === 0 ? (
                   <tr><td colSpan={4} className="px-4 py-10 text-center text-gray-400">Nenhum movimento registrado</td></tr>
                 ) : recent.map(h => (
-                  <tr key={h.id} className="border-t border-gray-50 hover:bg-blue-50 transition-colors">
+                  <tr key={h.id} onClick={() => setSelected(h)} className="border-t border-gray-50 hover:bg-blue-50 transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-medium text-gray-800">{h.produtoNome}</td>
                     <td className="px-4 py-3">
                       {h.tipo === 'entrada'
@@ -132,6 +129,8 @@ export default function Dashboard({ produtos, historico }: Props) {
           </div>
         </div>
       </div>
+
+      {selected && <MovimentoDetailModal mov={selected} onClose={() => setSelected(null)} />}
     </div>
   )
 }

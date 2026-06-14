@@ -9,11 +9,12 @@ const EMPRESAS = ['ULTRALIGHT', 'TECNOFLY', 'UL BRASIL', 'ULTRAFOODS', 'PESTSTOR
 interface Props {
   open: boolean
   produtos: Produto[]
+  presetProdutoId?: string
   onClose: () => void
   onConfirm: (produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) => void
 }
 
-export default function ModalSaida({ open, produtos, onClose, onConfirm }: Props) {
+export default function ModalSaida({ open, produtos, presetProdutoId, onClose, onConfirm }: Props) {
   const [produtoId,      setProdutoId]      = useState('')
   const [qtd,            setQtd]            = useState('')
   const [obs,            setObs]            = useState('')
@@ -25,10 +26,10 @@ export default function ModalSaida({ open, produtos, onClose, onConfirm }: Props
 
   useEffect(() => {
     if (open) {
-      setProdutoId(''); setQtd(''); setObs('')
+      setProdutoId(presetProdutoId || ''); setQtd(''); setObs('')
       setResponsavel(''); setEmpresaDestino(''); setErrors({})
     }
-  }, [open])
+  }, [open, presetProdutoId])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }

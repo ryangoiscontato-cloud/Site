@@ -3,79 +3,49 @@
 import { useState, useMemo } from 'react'
 import type { Movimento } from '@/lib/types'
 import { fmtDate } from '@/lib/utils'
+import MovimentoDetailModal from '@/components/modals/MovimentoDetailModal'
 
 interface Props {
   historico: Movimento[]
-  onLimpar: () => void
 }
 
-function DetailModal({ mov, onClose }: { mov: Movimento; onClose: () => void }) {
-  return (
-    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box animate-slide-up">
-        <div className={`flex items-center justify-between px-6 py-5 ${mov.tipo === 'entrada' ? 'bg-green-50 border-b border-green-200' : 'bg-red-50 border-b border-red-200'} rounded-t-2xl`}>
-          <div className="flex items-center gap-3.5">
-            <div className={`w-10 h-10 ${mov.tipo === 'entrada' ? 'bg-green-600' : 'bg-red-600'} rounded-lg flex items-center justify-center flex-shrink-0`}>
-              <svg className="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                {mov.tipo === 'entrada'
-                  ? <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/>
-                  : <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"/>
-                }
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-900">Detalhes do Movimento</h3>
-              <p className="text-xs text-gray-500 mt-0.5">#{mov.id.slice(-4).toUpperCase()}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="modal-close-btn">&times;</button>
-        </div>
+type Preset = 'todos' | '7dias' | 'mes' | 'ano' | 'personalizado'
 
-        <div className="px-6 py-5 space-y-3">
-          <Row label="Produto" value={mov.produtoNome} />
-          <Row label="Tipo">
-            {mov.tipo === 'entrada'
-              ? <span className="badge-green">Entrada</span>
-              : <span className="badge-red">Saída / Transferência</span>}
-          </Row>
-          <Row label="Quantidade">
-            <span className={`font-bold text-base ${mov.tipo === 'entrada' ? 'text-green-600' : 'text-red-600'}`}>
-              {mov.tipo === 'entrada' ? '+' : '-'}{mov.qtd}
-            </span>
-          </Row>
-          <Row label="Data / Hora" value={fmtDate(mov.data)} />
-          {mov.responsavel   && <Row label="Responsável"    value={mov.responsavel} />}
-          {mov.empresaDestino && (
-            <Row label="Empresa Destino">
-              <span className="inline-block px-2.5 py-0.5 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">{mov.empresaDestino}</span>
-            </Row>
-          )}
-          {mov.obs && <Row label="Observação" value={mov.obs} />}
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
-          <button onClick={onClose} className="btn-cancel">Fechar</button>
-        </div>
-      </div>
-    </div>
-  )
+function localISODate(d: Date): string {
+  // yyyy-mm-dd in local time (avoids UTC off-by-one)
+  const tz = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - tz).toISOString().slice(0, 10)
 }
 
-function Row({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
-      <span className="text-xs text-gray-400 uppercase tracking-wide font-semibold w-32 flex-shrink-0 pt-0.5">{label}</span>
-      <span className="text-sm text-gray-800">{children ?? value ?? '—'}</span>
-    </div>
-  )
-}
-
-export default function Historico({ historico, onLimpar }: Props) {
+export default function Historico({ historico }: Props) {
   const [search,    setSearch]   = useState('')
   const [tipoFilter, setTipo]    = useState<'' | 'entrada' | 'saida'>('')
+  const [preset,    setPreset]   = useState<Preset>('todos')
   const [dateFrom,  setDateFrom] = useState('')
   const [dateTo,    setDateTo]   = useState('')
   const [selected,  setSelected] = useState<Movimento | null>(null)
+
+  // Compute effective date range from the active preset
+  const { rangeFrom, rangeTo } = useMemo(() => {
+    const now = new Date()
+    const today = localISODate(now)
+    if (preset === '7dias') {
+      const d = new Date(); d.setDate(d.getDate() - 6)
+      return { rangeFrom: localISODate(d), rangeTo: today }
+    }
+    if (preset === 'mes') {
+      const d = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { rangeFrom: localISODate(d), rangeTo: today }
+    }
+    if (preset === 'ano') {
+      const d = new Date(now.getFullYear(), 0, 1)
+      return { rangeFrom: localISODate(d), rangeTo: today }
+    }
+    if (preset === 'personalizado') {
+      return { rangeFrom: dateFrom, rangeTo: dateTo }
+    }
+    return { rangeFrom: '', rangeTo: '' }
+  }, [preset, dateFrom, dateTo])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -83,11 +53,11 @@ export default function Historico({ historico, onLimpar }: Props) {
       const hDate = h.data.slice(0, 10)
       if (q && !h.produtoNome.toLowerCase().includes(q)) return false
       if (tipoFilter && h.tipo !== tipoFilter)           return false
-      if (dateFrom && hDate < dateFrom)                  return false
-      if (dateTo   && hDate > dateTo)                    return false
+      if (rangeFrom && hDate < rangeFrom)                return false
+      if (rangeTo   && hDate > rangeTo)                  return false
       return true
     })
-  }, [historico, search, tipoFilter, dateFrom, dateTo])
+  }, [historico, search, tipoFilter, rangeFrom, rangeTo])
 
   const totalEntrada = useMemo(
     () => filtered.filter(h => h.tipo === 'entrada').reduce((s, h) => s + h.qtd, 0),
@@ -98,27 +68,24 @@ export default function Historico({ historico, onLimpar }: Props) {
     [filtered]
   )
 
-  const hasFilters = search || tipoFilter || dateFrom || dateTo
+  const hasFilters = search || tipoFilter || preset !== 'todos'
 
   function clearFilters() {
-    setSearch(''); setTipo(''); setDateFrom(''); setDateTo('')
+    setSearch(''); setTipo(''); setPreset('todos'); setDateFrom(''); setDateTo('')
   }
+
+  const presets: { id: Preset; label: string }[] = [
+    { id: 'todos',         label: 'Tudo' },
+    { id: '7dias',         label: 'Últimos 7 dias' },
+    { id: 'mes',           label: 'Este mês' },
+    { id: 'ano',           label: 'Este ano' },
+    { id: 'personalizado', label: 'Personalizado' },
+  ]
 
   return (
     <div>
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <h1 className="text-xl sm:text-2xl font-bold text-blue-900 tracking-tight">Histórico de Movimentos</h1>
-        <button
-          onClick={() => {
-            if (confirm('Tem certeza que deseja limpar todo o histórico? Esta ação não pode ser desfeita.')) onLimpar()
-          }}
-          className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-red-300 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-50 active:bg-red-100 transition-colors"
-        >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
-          </svg>
-          Limpar histórico
-        </button>
       </div>
 
       {/* Totals */}
@@ -166,36 +133,58 @@ export default function Historico({ historico, onLimpar }: Props) {
           </select>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-gray-500 flex-shrink-0">Período:</span>
-          <div className="flex items-center gap-2 flex-1 flex-wrap">
-            <div className="relative flex-1 min-w-[140px]">
-              <label className="absolute -top-2 left-2.5 text-[0.65rem] font-semibold text-gray-400 bg-white px-1">De</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 transition-all"
-              />
-            </div>
-            <span className="text-gray-400 text-sm flex-shrink-0">—</span>
-            <div className="relative flex-1 min-w-[140px]">
-              <label className="absolute -top-2 left-2.5 text-[0.65rem] font-semibold text-gray-400 bg-white px-1">Até</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 transition-all"
-              />
-            </div>
+        {/* Period presets */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-gray-500">Período</span>
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-lg hover:bg-blue-50"
+              >
+                Limpar filtros
+              </button>
+            )}
           </div>
-          {hasFilters && (
-            <button
-              onClick={clearFilters}
-              className="flex-shrink-0 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-lg hover:bg-blue-50"
-            >
-              Limpar filtros
-            </button>
+          <div className="flex gap-2 flex-wrap">
+            {presets.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setPreset(p.id)}
+                className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  preset === p.id
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {preset === 'personalizado' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">De</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={e => setDateFrom(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Até</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={e => setDateTo(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 transition-all"
+                />
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -257,7 +246,7 @@ export default function Historico({ historico, onLimpar }: Props) {
         </div>
       </div>
 
-      {selected && <DetailModal mov={selected} onClose={() => setSelected(null)} />}
+      {selected && <MovimentoDetailModal mov={selected} onClose={() => setSelected(null)} />}
     </div>
   )
 }

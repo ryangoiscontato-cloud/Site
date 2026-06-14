@@ -7,11 +7,12 @@ import ProductSearchSelect from '@/components/ProductSearchSelect'
 interface Props {
   open: boolean
   produtos: Produto[]
+  presetProdutoId?: string
   onClose: () => void
   onConfirm: (produtoId: string, qtd: number, obs: string) => void
 }
 
-export default function ModalEntrada({ open, produtos, onClose, onConfirm }: Props) {
+export default function ModalEntrada({ open, produtos, presetProdutoId, onClose, onConfirm }: Props) {
   const [produtoId, setProdutoId] = useState('')
   const [qtd, setQtd]             = useState('')
   const [obs, setObs]             = useState('')
@@ -20,8 +21,8 @@ export default function ModalEntrada({ open, produtos, onClose, onConfirm }: Pro
   const produto = produtos.find(p => p.id === produtoId)
 
   useEffect(() => {
-    if (open) { setProdutoId(''); setQtd(''); setObs(''); setErrors({}) }
-  }, [open])
+    if (open) { setProdutoId(presetProdutoId || ''); setQtd(''); setObs(''); setErrors({}) }
+  }, [open, presetProdutoId])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
