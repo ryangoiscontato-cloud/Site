@@ -82,14 +82,19 @@ export function useInventory(currentUser: Usuario | null) {
     let active = true
 
     async function fetchAll() {
-      const [{ data: prod }, { data: hist }] = await Promise.all([
-        supabase!.from('produtos').select('*').order('codigo'),
-        supabase!.from('historico').select('*').order('data'),
-      ])
-      if (!active) return
-      if (prod) setProdutos((prod as ProdutoRow[]).map(mapProduto))
-      if (hist) setHistorico((hist as HistoricoRow[]).map(mapMovimento))
-      setHydrated(true)
+      try {
+        const [{ data: prod }, { data: hist }] = await Promise.all([
+          supabase!.from('produtos').select('*').order('codigo'),
+          supabase!.from('historico').select('*').order('data'),
+        ])
+        if (!active) return
+        if (prod) setProdutos((prod as ProdutoRow[]).map(mapProduto))
+        if (hist) setHistorico((hist as HistoricoRow[]).map(mapMovimento))
+      } catch {
+        if (active) setError('Erro ao conectar ao banco de dados.')
+      } finally {
+        if (active) setHydrated(true)
+      }
     }
 
     fetchAll()

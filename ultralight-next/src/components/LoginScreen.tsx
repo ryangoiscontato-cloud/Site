@@ -31,12 +31,12 @@ export default function LoginScreen({ onLogin }: Props) {
         <div className="text-center mb-7 text-white">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo.jpeg"
+            src="/logo.png"
             alt="Ultralight"
-            width={72}
-            height={72}
-            className="rounded-2xl object-cover w-18 h-18 mx-auto mb-4 shadow-lg ring-4 ring-white/20"
-            style={{ width: 72, height: 72 }}
+            width={80}
+            height={80}
+            className="rounded-2xl object-cover mx-auto mb-4 shadow-xl"
+            style={{ width: 80, height: 80 }}
           />
           <h1 className="text-3xl font-extrabold tracking-tight leading-none">ULTRALIGHT</h1>
           <p className="text-sm text-red-100 uppercase tracking-[0.25em] mt-1.5">Gestão de Estoque</p>

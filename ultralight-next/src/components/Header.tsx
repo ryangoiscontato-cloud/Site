@@ -31,11 +31,11 @@ export default function Header({ user, onEntrada, onSaida, onScan, onGerenciarUs
         <div className="flex items-center gap-3 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo.jpeg"
+            src="/logo.png"
             alt="Ultralight"
             width={40}
             height={40}
-            className="rounded-full object-cover flex-shrink-0 w-10 h-10"
+            className="rounded-xl object-cover flex-shrink-0 w-10 h-10"
           />
           <div className="min-w-0">
             <span className="block text-lg sm:text-[1.35rem] font-extrabold text-[#0f2d5e] leading-none tracking-tight">
