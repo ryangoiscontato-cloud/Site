@@ -9,10 +9,12 @@ export interface Produto {
   codigoBarras?: string
 }
 
+export type UserRole = 'admin' | 'user' | 'chaparia' | 'almoxarifado'
+
 export interface Usuario {
   id: string
   username: string
-  role: 'admin' | 'user'
+  role: UserRole
 }
 
 export interface Movimento {
@@ -23,15 +25,29 @@ export interface Movimento {
   qtd: number
   obs: string
   data: string
-  // Campos de transferência (saída)
   responsavel?: string
   empresaDestino?: string
-  // Usuário que registrou o movimento
   usuarioId?: string
   usuarioNome?: string
 }
 
-export type TabId = 'dashboard' | 'saldo' | 'produtos' | 'historico'
+export interface OrdemProducao {
+  id: string
+  tipo: 'chaparia' | 'almoxarifado'
+  status: 'pendente' | 'em_producao' | 'concluida'
+  produtoId: string
+  produtoNome: string
+  quantidade: number
+  petgQuantidade?: number
+  obs: string
+  criadoPor: string
+  criadoEm: string
+  iniciadoEm?: string
+  concluidoEm?: string
+  usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO'
+}
+
+export type TabId = 'dashboard' | 'saldo' | 'produtos' | 'historico' | 'producao'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 

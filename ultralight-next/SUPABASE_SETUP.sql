@@ -67,3 +67,37 @@ end $$;
 insert into usuarios (username, senha_hash, role)
 values ('RYAN', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'admin')
 on conflict (username) do nothing;
+
+-- 5. Tabela de ordens de produção ---------------------------------------------
+create table if not exists ordens_producao (
+  id text primary key,
+  tipo text not null,
+  status text not null default 'pendente',
+  produto_id text,
+  produto_nome text not null,
+  quantidade int not null,
+  petg_quantidade int,
+  obs text default '',
+  criado_por text not null,
+  criado_em timestamptz default now(),
+  iniciado_em timestamptz,
+  concluido_em timestamptz,
+  usuario_destino text not null
+);
+
+alter table ordens_producao disable row level security;
+
+do $$
+begin
+  alter publication supabase_realtime add table ordens_producao;
+exception when duplicate_object then null;
+end $$;
+
+-- 6. Usuários CHAPARIA e ALMOXARIFADO (senha: 1234) ---------------------------
+insert into usuarios (username, senha_hash, role)
+values ('CHAPARIA', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'chaparia')
+on conflict (username) do nothing;
+
+insert into usuarios (username, senha_hash, role)
+values ('ALMOXARIFADO', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'almoxarifado')
+on conflict (username) do nothing;

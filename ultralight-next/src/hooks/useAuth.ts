@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { Usuario } from '@/lib/types'
+import type { Usuario, UserRole } from '@/lib/types'
 import { supabase, isConfigured } from '@/lib/supabase'
 import { hashPassword, getSession, setSession, clearSession } from '@/lib/auth'
 
@@ -13,8 +13,15 @@ interface UsuarioRow {
   created_at?: string
 }
 
+function mapRole(role: string): UserRole {
+  if (role === 'admin') return 'admin'
+  if (role === 'chaparia') return 'chaparia'
+  if (role === 'almoxarifado') return 'almoxarifado'
+  return 'user'
+}
+
 function mapUsuario(row: UsuarioRow): Usuario {
-  return { id: row.id, username: row.username, role: row.role === 'admin' ? 'admin' : 'user' }
+  return { id: row.id, username: row.username, role: mapRole(row.role) }
 }
 
 export function useAuth() {
@@ -22,7 +29,6 @@ export function useAuth() {
   const [loading, setLoading]   = useState(true)
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
 
-  // Restore session on mount
   useEffect(() => {
     setUser(getSession())
     setLoading(false)
@@ -34,7 +40,6 @@ export function useAuth() {
     if (data) setUsuarios((data as UsuarioRow[]).map(mapUsuario))
   }, [])
 
-  // Load the user list whenever an admin is logged in
   useEffect(() => {
     if (user?.role === 'admin') carregarUsuarios()
   }, [user, carregarUsuarios])

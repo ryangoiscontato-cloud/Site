@@ -6,6 +6,7 @@ import type { Produto, TabId } from '@/lib/types'
 import { useInventory } from '@/hooks/useInventory'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
+import { useOrdens } from '@/hooks/useOrdens'
 import { isConfigured } from '@/lib/supabase'
 
 import Header       from './Header'
@@ -16,6 +17,8 @@ import Dashboard    from './tabs/Dashboard'
 import SaldoEstoque from './tabs/SaldoEstoque'
 import Produtos     from './tabs/Produtos'
 import Historico    from './tabs/Historico'
+import Producao     from './tabs/Producao'
+import WorkerApp    from './WorkerApp'
 
 import ModalEntrada     from './modals/ModalEntrada'
 import ModalSaida       from './modals/ModalSaida'
@@ -23,6 +26,7 @@ import ModalProduto     from './modals/ModalProduto'
 import ModalConfirm     from './modals/ModalConfirm'
 import ModalScanChoice  from './modals/ModalScanChoice'
 import ModalNovoUsuario from './modals/ModalNovoUsuario'
+import ModalSolicitarOP from './modals/ModalSolicitarOP'
 
 const BarcodeScanner = dynamic(() => import('./BarcodeScanner'), { ssr: false })
 
@@ -32,11 +36,11 @@ export default function InventoryApp() {
     produtos, historico, hydrated, error,
     registrarEntrada, registrarSaida, adicionarProduto, atualizarProduto, excluirProduto,
   } = useInventory(user)
+  const { ordens, criarOrdem } = useOrdens()
   const { toasts, toast, dismiss } = useToast()
 
   const [tab, setTab] = useState<TabId>('dashboard')
 
-  // Modal states
   const [modalEntrada, setModalEntrada] = useState(false)
   const [modalSaida,   setModalSaida]   = useState(false)
   const [modalProduto, setModalProduto] = useState(false)
@@ -44,8 +48,8 @@ export default function InventoryApp() {
   const [modalExcluir, setModalExcluir] = useState(false)
   const [produtoExcluir, setProdutoExcluir] = useState<Produto | null>(null)
   const [modalUsuario, setModalUsuario] = useState(false)
+  const [modalOP,      setModalOP]      = useState(false)
 
-  // Picking / scan states
   const [scanning,    setScanning]    = useState(false)
   const [scanProduto, setScanProduto] = useState<Produto | null>(null)
   const [presetProdutoId, setPresetProdutoId] = useState<string>('')
@@ -62,7 +66,6 @@ export default function InventoryApp() {
     setModalSaida(true)
   }
 
-  // ── Picking ────────────────────────────────────────────────────────────────
   function handleScanClick() {
     setScanning(true)
   }
@@ -116,7 +119,6 @@ export default function InventoryApp() {
 
   const codigosExistentes = produtos.map(p => p.codigo)
 
-  // ── Not configured ──────────────────────────────────────────────────────────
   if (!isConfigured) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
@@ -139,7 +141,6 @@ export default function InventoryApp() {
     )
   }
 
-  // ── Auth gate ─────────────────────────────────────────────────────────────
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -152,7 +153,10 @@ export default function InventoryApp() {
     return <LoginScreen onLogin={login} />
   }
 
-  // ── Loading inventory ──────────────────────────────────────────────────────
+  if (user.role === 'chaparia' || user.role === 'almoxarifado') {
+    return <WorkerApp user={user} logout={logout} />
+  }
+
   if (!hydrated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -172,15 +176,22 @@ export default function InventoryApp() {
         onSaida={handleSaida}
         onScan={handleScanClick}
         onGerenciarUsuarios={() => setModalUsuario(true)}
+        onSolicitarOP={() => setModalOP(true)}
         onLogout={logout}
       />
-      <NavTabs active={tab} onChange={setTab} />
+      <NavTabs active={tab} onChange={setTab} userRole={user.role} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-7 pb-28 lg:pb-12">
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>
         )}
-        {tab === 'dashboard' && <Dashboard  produtos={produtos} historico={historico} />}
+        {tab === 'dashboard' && (
+          <Dashboard
+            produtos={produtos}
+            historico={historico}
+            onTabChange={setTab}
+          />
+        )}
         {tab === 'saldo'     && <SaldoEstoque produtos={produtos} />}
         {tab === 'produtos'  && (
           <Produtos
@@ -191,9 +202,9 @@ export default function InventoryApp() {
           />
         )}
         {tab === 'historico' && <Historico historico={historico} />}
+        {tab === 'producao'  && <Producao ordens={ordens} />}
       </main>
 
-      {/* Modals */}
       <ModalEntrada
         open={modalEntrada}
         produtos={produtos}
@@ -228,8 +239,18 @@ export default function InventoryApp() {
         onClose={() => setModalUsuario(false)}
         onCriar={criarUsuario}
       />
+      {user && (
+        <ModalSolicitarOP
+          open={modalOP}
+          produtos={produtos}
+          user={user}
+          criarOrdem={criarOrdem}
+          onClose={() => setModalOP(false)}
+          onSuccess={msg => toast(msg, 'success')}
+          onError={msg => toast(msg, 'error')}
+        />
+      )}
 
-      {/* Picking flow */}
       {scanning && (
         <BarcodeScanner onScan={handleScanned} onClose={() => setScanning(false)} />
       )}

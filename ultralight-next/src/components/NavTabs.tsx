@@ -1,8 +1,8 @@
 'use client'
 
-import type { TabId } from '@/lib/types'
+import type { TabId, UserRole } from '@/lib/types'
 
-const tabs: { id: TabId; label: string; shortLabel: string; icon: React.ReactNode }[] = [
+const baseTabs: { id: TabId; label: string; shortLabel: string; icon: React.ReactNode }[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -46,15 +46,29 @@ const tabs: { id: TabId; label: string; shortLabel: string; icon: React.ReactNod
   },
 ]
 
+const producaoTab: { id: TabId; label: string; shortLabel: string; icon: React.ReactNode } = {
+  id: 'producao',
+  label: 'Produção',
+  shortLabel: 'Produção',
+  icon: (
+    <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+    </svg>
+  ),
+}
+
 interface NavTabsProps {
   active: TabId
   onChange: (id: TabId) => void
+  userRole?: UserRole
 }
 
-export default function NavTabs({ active, onChange }: NavTabsProps) {
+export default function NavTabs({ active, onChange, userRole }: NavTabsProps) {
+  const tabs = userRole === 'admin' ? [...baseTabs, producaoTab] : baseTabs
+  const mobileColCount = tabs.length
+
   return (
     <>
-      {/* ── Desktop top tabs — only on lg+ (1024px) ── */}
       <nav className="hidden lg:block bg-white border-b border-gray-200 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-6 flex">
           {tabs.map(tab => (
@@ -74,7 +88,6 @@ export default function NavTabs({ active, onChange }: NavTabsProps) {
         </div>
       </nav>
 
-      {/* ── Mobile bottom nav — hidden on lg+ ── */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200"
         style={{
@@ -82,7 +95,7 @@ export default function NavTabs({ active, onChange }: NavTabsProps) {
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
-        <div className="grid grid-cols-4 w-full">
+        <div className="w-full" style={{ display: 'grid', gridTemplateColumns: `repeat(${mobileColCount}, 1fr)` }}>
           {tabs.map(tab => (
             <button
               key={tab.id}
