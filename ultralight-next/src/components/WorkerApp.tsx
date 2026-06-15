@@ -2,21 +2,22 @@
 
 import { useState } from 'react'
 import type { Usuario, OrdemProducao } from '@/lib/types'
-import { useOrdens } from '@/hooks/useOrdens'
 import OrdensList from './worker/OrdensList'
 import OrdemDetail from './worker/OrdemDetail'
 
 interface Props {
   user: Usuario
   logout: () => void
+  ordens: OrdemProducao[]
+  iniciarOrdem: (id: string) => Promise<{ ok: boolean; error?: string }>
+  concluirOrdem: (id: string) => Promise<{ ok: boolean; error?: string }>
 }
 
 type Screen = 'menu' | 'ordens' | 'historico'
 
-export default function WorkerApp({ user, logout }: Props) {
+export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluirOrdem }: Props) {
   const [screen, setScreen]         = useState<Screen>('menu')
   const [selected, setSelected]     = useState<OrdemProducao | null>(null)
-  const { ordens, iniciarOrdem, concluirOrdem } = useOrdens()
 
   const dest = user.username.toUpperCase()
   const minhas = ordens.filter(o => o.usuarioDestino === dest)

@@ -36,7 +36,7 @@ export default function InventoryApp() {
     produtos, historico, hydrated, error,
     registrarEntrada, registrarSaida, adicionarProduto, atualizarProduto, excluirProduto,
   } = useInventory(user)
-  const { ordens, criarOrdem } = useOrdens()
+  const { ordens, criarOrdem, iniciarOrdem, concluirOrdem } = useOrdens()
   const { toasts, toast, dismiss } = useToast()
 
   const [tab, setTab] = useState<TabId>('dashboard')
@@ -154,7 +154,7 @@ export default function InventoryApp() {
   }
 
   if (user.role === 'chaparia' || user.role === 'almoxarifado') {
-    return <WorkerApp user={user} logout={logout} />
+    return <WorkerApp user={user} logout={logout} ordens={ordens} iniciarOrdem={iniciarOrdem} concluirOrdem={concluirOrdem} />
   }
 
   if (!hydrated) {
