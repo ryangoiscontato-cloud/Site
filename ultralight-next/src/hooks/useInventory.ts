@@ -82,16 +82,26 @@ export function useInventory(currentUser: Usuario | null) {
     let active = true
 
     async function fetchAll() {
+      const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+        Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
+
       try {
-        const [{ data: prod }, { data: hist }] = await Promise.all([
-          supabase!.from('produtos').select('*').order('codigo'),
-          supabase!.from('historico').select('*').order('data'),
-        ])
+        const [{ data: prod }, { data: hist }] = await withTimeout(
+          Promise.all([
+            supabase!.from('produtos').select('*').order('codigo'),
+            supabase!.from('historico').select('*').order('data'),
+          ]),
+          8000
+        )
         if (!active) return
         if (prod) setProdutos((prod as ProdutoRow[]).map(mapProduto))
         if (hist) setHistorico((hist as HistoricoRow[]).map(mapMovimento))
-      } catch {
-        if (active) setError('Erro ao conectar ao banco de dados.')
+      } catch (e) {
+        if (active) setError(
+          e instanceof Error && e.message === 'timeout'
+            ? 'Tempo esgotado. Verifique sua conexão com o Supabase.'
+            : 'Erro ao carregar dados. Verifique a conexão.'
+        )
       } finally {
         if (active) setHydrated(true)
       }
