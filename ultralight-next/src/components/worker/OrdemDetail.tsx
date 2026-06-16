@@ -86,7 +86,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-1">Motivo da Pausa</h3>
-            <p className="text-sm text-gray-500 mb-4">Informe o motivo para pausar a producao.</p>
+            <p className="text-sm text-gray-500 mb-4">Informe o motivo para pausar a produção.</p>
             <textarea
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
               rows={3}
@@ -153,7 +153,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
 
           {ordem.obs && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-              <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Observacao</p>
+              <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Observação</p>
               <p className="text-sm text-amber-900">{ordem.obs}</p>
             </div>
           )}
@@ -169,7 +169,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
                 ordem.status === 'pausada' ? 'text-amber-600' :
                 'text-blue-600'
               }`}>
-                {ordem.concluidoEm          ? 'Tempo de producao' :
+                {ordem.concluidoEm          ? 'Tempo de produção' :
                  ordem.status === 'pausada' ? 'Em pausa' : 'Em andamento'}
               </p>
               <p className={`text-4xl font-bold font-mono ${
@@ -180,7 +180,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
                 {formatMs(ms)}
               </p>
               {ordem.concluidoEm && (
-                <p className="text-xs text-green-600 mt-2">Concluido em {fmtDate(ordem.concluidoEm)}</p>
+                <p className="text-xs text-green-600 mt-2">Concluído em {fmtDate(ordem.concluidoEm)}</p>
               )}
             </div>
           )}
@@ -207,7 +207,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
               disabled={loading}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 text-white text-base font-bold rounded-xl transition-colors"
             >
-              {loading ? 'Aguarde...' : isChaparia ? 'Iniciar Producao' : 'Iniciar Separacao'}
+              {loading ? 'Aguarde...' : isChaparia ? 'Iniciar Produção' : 'Iniciar Separação'}
             </button>
           )}
 
@@ -219,7 +219,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
                   disabled={loading}
                   className="w-full py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:opacity-60 text-white text-base font-bold rounded-xl transition-colors"
                 >
-                  Pausar Producao
+                  Pausar Produção
                 </button>
               )}
               <button
@@ -227,7 +227,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
                 disabled={loading}
                 className="w-full py-4 bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:opacity-60 text-white text-base font-bold rounded-xl transition-colors"
               >
-                {loading ? 'Aguarde...' : isChaparia ? 'Concluir Ordem' : 'Concluir Separacao'}
+                {loading ? 'Aguarde...' : isChaparia ? 'Concluir Ordem' : 'Concluir Separação'}
               </button>
             </div>
           )}
@@ -239,7 +239,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
                 disabled={loading}
                 className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 text-white text-base font-bold rounded-xl transition-colors"
               >
-                {loading ? 'Aguarde...' : 'Retomar Producao'}
+                {loading ? 'Aguarde...' : 'Retomar Produção'}
               </button>
               <button
                 onClick={() => act(() => onConcluir(ordem.id))}

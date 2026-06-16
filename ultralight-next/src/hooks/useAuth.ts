@@ -99,5 +99,30 @@ export function useAuth() {
     return { ok: true }
   }, [carregarUsuarios])
 
-  return { user, loading, login, logout, criarUsuario, usuarios }
+  const alterarUsuario = useCallback(async (
+    userId: string,
+    novoUsername?: string,
+    novaSenha?: string,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
+
+    const updates: Record<string, string> = {}
+    if (novoUsername) updates.username = novoUsername.trim().toUpperCase()
+    if (novaSenha) {
+      if (novaSenha.length < 3) return { ok: false, error: 'A senha deve ter ao menos 3 caracteres.' }
+      updates.senha_hash = await hashPassword(novaSenha)
+    }
+    if (Object.keys(updates).length === 0) return { ok: false, error: 'Nada para alterar.' }
+
+    const { error } = await supabase.from('usuarios').update(updates).eq('id', userId)
+    if (error) {
+      if (error.code === '23505') return { ok: false, error: 'Esse usuário já existe.' }
+      return { ok: false, error: 'Erro ao alterar usuário.' }
+    }
+
+    await carregarUsuarios()
+    return { ok: true }
+  }, [carregarUsuarios])
+
+  return { user, loading, login, logout, criarUsuario, alterarUsuario, usuarios }
 }

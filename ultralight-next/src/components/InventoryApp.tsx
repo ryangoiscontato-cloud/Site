@@ -31,7 +31,7 @@ import ModalSolicitarOP from './modals/ModalSolicitarOP'
 const BarcodeScanner = dynamic(() => import('./BarcodeScanner'), { ssr: false })
 
 export default function InventoryApp() {
-  const { user, loading: authLoading, login, logout, criarUsuario, usuarios } = useAuth()
+  const { user, loading: authLoading, login, logout, criarUsuario, alterarUsuario, usuarios } = useAuth()
   const {
     produtos, historico, hydrated, error,
     registrarEntrada, registrarSaida, adicionarProduto, atualizarProduto, excluirProduto,
@@ -185,10 +185,10 @@ export default function InventoryApp() {
           <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-cover w-9 h-9" />
+              <img src="/logo.png" alt="Ultralight" width={36} height={36} className="object-contain w-9 h-9" />
               <div>
                 <span className="block font-extrabold text-[#0f2d5e] text-lg tracking-tight leading-none">ULTRALIGHT</span>
-                <span className="block text-[0.6rem] text-gray-400 uppercase tracking-widest mt-0.5">Gestao de Estoque</span>
+                <span className="block text-[0.6rem] text-gray-400 uppercase tracking-widest mt-0.5">Gestão de Estoque</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -214,10 +214,10 @@ export default function InventoryApp() {
               { tab: 'produtos' as TabId, label: 'Produtos', sub: 'Gerenciar cadastro', color: 'bg-indigo-100 text-indigo-600', icon: (
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 4v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               )},
-              { tab: 'historico' as TabId, label: 'Historico', sub: 'Movimentacoes', color: 'bg-green-100 text-green-600', icon: (
+              { tab: 'historico' as TabId, label: 'Histórico', sub: 'Movimentações', color: 'bg-green-100 text-green-600', icon: (
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               )},
-              { tab: 'producao' as TabId, label: 'Producao', sub: 'Ordens de producao', color: 'bg-orange-100 text-orange-600', icon: (
+              { tab: 'producao' as TabId, label: 'Produção', sub: 'Ordens de produção', color: 'bg-orange-100 text-orange-600', icon: (
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
               )},
             ] as const).map(({ tab: t, label, sub, color, icon }) => (
@@ -246,7 +246,7 @@ export default function InventoryApp() {
               className="flex-1 flex items-center justify-center gap-2 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
-              Saida
+              Saída
             </button>
           </div>
         </main>
@@ -266,9 +266,24 @@ export default function InventoryApp() {
         onLogout={logout}
         onHome={user.role === 'admin' ? () => setShowHome(true) : undefined}
       />
-      <NavTabs active={tab} onChange={t => { setTab(t); setShowHome(false) }} userRole={user.role} />
+      <NavTabs active={tab} onChange={t => { setTab(t); setShowHome(false) }} userRole={user.role} adminMode={user.role === 'admin'} />
+      {user.role === 'admin' && (
+        <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-2.5 flex items-center gap-3">
+          <button
+            onClick={() => setShowHome(true)}
+            className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+            </svg>
+            Início
+          </button>
+          <span className="text-gray-300">›</span>
+          <span className="text-sm text-gray-500 font-medium capitalize">{tab === 'saldo' ? 'Saldo' : tab === 'produtos' ? 'Produtos' : tab === 'historico' ? 'Histórico' : tab === 'producao' ? 'Produção' : tab}</span>
+        </div>
+      )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-7 pb-28 lg:pb-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-7 pb-10 lg:pb-12">
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>
         )}
@@ -323,8 +338,10 @@ export default function InventoryApp() {
       <ModalNovoUsuario
         open={modalUsuario}
         usuarios={usuarios}
+        currentUserId={user?.id}
         onClose={() => setModalUsuario(false)}
         onCriar={criarUsuario}
+        onAlterar={alterarUsuario}
       />
       {user && (
         <ModalSolicitarOP

@@ -27,15 +27,15 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
   const selected = selectedId ? ordens.find(o => o.id === selectedId) ?? null : null
   const pendentes = minhas.filter(o => o.status !== 'concluida').length
 
-  const ordensLabel    = isAlmox ? 'Ordens de Separacao' : 'Ordens de Producao'
-  const historicoLabel = isAlmox ? 'Historico de Separacao' : 'Historico de Producao'
+  const ordensLabel    = isAlmox ? 'Ordens de Separação' : 'Ordens de Produção'
+  const historicoLabel = isAlmox ? 'Histórico de Separação' : 'Histórico de Produção'
 
   const WorkerHeader = () => (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
       <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-cover w-9 h-9" />
+          <img src="/logo.png" alt="Ultralight" width={36} height={36} className="object-contain w-9 h-9" />
           <span className="font-extrabold text-[#0f2d5e] text-lg tracking-tight">ULTRALIGHT</span>
         </div>
         <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
                   </svg>
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">{historicoLabel}</h2>
-                <p className="text-sm text-gray-500 mt-1">Ver ordens concluidas anteriormente</p>
+                <p className="text-sm text-gray-500 mt-1">Ver ordens concluídas anteriormente</p>
               </button>
             </div>
           </div>

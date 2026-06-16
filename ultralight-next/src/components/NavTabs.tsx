@@ -61,9 +61,10 @@ interface NavTabsProps {
   active: TabId
   onChange: (id: TabId) => void
   userRole?: UserRole
+  adminMode?: boolean
 }
 
-export default function NavTabs({ active, onChange, userRole }: NavTabsProps) {
+export default function NavTabs({ active, onChange, userRole, adminMode }: NavTabsProps) {
   const tabs = userRole === 'admin' ? [...baseTabs, producaoTab] : baseTabs
   const mobileColCount = tabs.length
 
@@ -89,7 +90,7 @@ export default function NavTabs({ active, onChange, userRole }: NavTabsProps) {
       </nav>
 
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200"
+        className={`${adminMode ? 'hidden' : 'lg:hidden'} fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200`}
         style={{
           boxShadow: '0 -2px 16px rgba(0,0,0,0.08)',
           paddingBottom: 'env(safe-area-inset-bottom)',

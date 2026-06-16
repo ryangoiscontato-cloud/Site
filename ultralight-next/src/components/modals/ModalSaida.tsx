@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import type { Produto } from '@/lib/types'
 import ProductSearchSelect from '@/components/ProductSearchSelect'
+import dynamic from 'next/dynamic'
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 
 const EMPRESAS = ['ULTRALIGHT', 'TECNOFLY', 'UL BRASIL', 'ULTRAFOODS', 'PESTSTORE']
 
@@ -21,6 +23,7 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
   const [responsavel,    setResponsavel]    = useState('')
   const [empresaDestino, setEmpresaDestino] = useState('')
   const [errors,         setErrors]         = useState<Record<string, string>>({})
+  const [scanning, setScanning] = useState(false)
 
   const produto = produtos.find(p => p.id === produtoId)
 
@@ -36,6 +39,17 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
     if (open) window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose])
+
+  function handleScanned(code: string) {
+    setScanning(false)
+    const found = produtos.find(p => (p.codigoBarras || '').trim() === code.trim())
+    if (found) {
+      setProdutoId(found.id)
+      setErrors(e => ({ ...e, produto: '' }))
+    } else {
+      setErrors(e => ({ ...e, produto: `Código "${code}" não encontrado` }))
+    }
+  }
 
   function handleConfirm() {
     const errs: Record<string, string> = {}
@@ -74,7 +88,19 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
         <div className="px-6 py-5 space-y-4">
           {/* Produto */}
           <div>
-            <label className="field-label">Produto *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="field-label !mb-0">Produto *</label>
+              <button
+                type="button"
+                onClick={() => setScanning(true)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#0f2d5e] hover:text-blue-700 transition-colors"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path strokeLinecap="round" d="M6 5v14M10 5v14M14 5v14M18 5v14"/>
+                </svg>
+                Picking
+              </button>
+            </div>
             <ProductSearchSelect
               produtos={produtos}
               value={produtoId}
@@ -168,6 +194,7 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
           </button>
         </div>
       </div>
+        {scanning && <BarcodeScanner onScan={handleScanned} onClose={() => setScanning(false)} />}
     </div>
   )
 }

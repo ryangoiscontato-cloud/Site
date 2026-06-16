@@ -35,7 +35,7 @@ export default function LoginScreen({ onLogin }: Props) {
             alt="Ultralight"
             width={80}
             height={80}
-            className="rounded-2xl object-cover mx-auto mb-4 shadow-xl"
+            className="object-contain mx-auto mb-4"
             style={{ width: 80, height: 80 }}
           />
           <h1 className="text-3xl font-extrabold tracking-tight leading-none">ULTRALIGHT</h1>
