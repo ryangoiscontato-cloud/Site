@@ -21,6 +21,10 @@ interface OrdemRow {
   usuario_destino: string
   linha: string | null
   pausas: PausaOrdem[] | null
+  tipo_pedido: string | null
+  pedido_numero: string | null
+  previsao_entrega: string | null
+  itens_pedido: Array<{ produtoId: string; produtoNome: string; quantidade: number }> | null
 }
 
 function mapOrdem(r: OrdemRow): OrdemProducao {
@@ -40,6 +44,10 @@ function mapOrdem(r: OrdemRow): OrdemProducao {
     usuarioDestino: r.usuario_destino as OrdemProducao['usuarioDestino'],
     pausas: r.pausas ?? [],
     linha: r.linha ?? undefined,
+    tipoPedido: (r.tipo_pedido as 'estoque' | 'pedido') ?? undefined,
+    pedidoNumero: r.pedido_numero ?? undefined,
+    previsaoEntrega: r.previsao_entrega ?? undefined,
+    itensPedido: r.itens_pedido ?? undefined,
   }
 }
 
@@ -91,6 +99,10 @@ export function useOrdens() {
     criadoPor: string
     usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO' | 'MONTAGEM'
     linha?: string
+    tipoPedido?: 'estoque' | 'pedido'
+    pedidoNumero?: string
+    previsaoEntrega?: string
+    itensPedido?: Array<{ produtoId: string; produtoNome: string; quantidade: number }>
   }): Promise<{ ok: boolean; error?: string }> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
 
@@ -108,6 +120,10 @@ export function useOrdens() {
       usuario_destino: dados.usuarioDestino,
       linha: dados.linha ?? null,
       pausas: [],
+      tipo_pedido: dados.tipoPedido ?? 'estoque',
+      pedido_numero: dados.pedidoNumero ?? null,
+      previsao_entrega: dados.previsaoEntrega ?? null,
+      itens_pedido: dados.itensPedido ?? null,
     })
 
     if (error) return { ok: false, error: 'Erro ao criar ordem.' }

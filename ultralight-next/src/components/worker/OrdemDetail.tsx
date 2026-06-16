@@ -58,6 +58,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
   const ms         = useNetTimer(ordem)
   const showTimer  = ordem.tipo === 'chaparia'
   const isChaparia = ordem.tipo === 'chaparia'
+  const isAlmox    = ordem.tipo === 'almoxarifado'
 
   async function act(fn: () => Promise<{ ok: boolean; error?: string }>) {
     setLoading(true); setError('')
@@ -71,6 +72,14 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
     if (!pauseMotivo.trim()) return
     const ok = await act(() => onPausar(ordem.id, pauseMotivo.trim()))
     if (ok) { setShowPause(false); setPauseMotivo('') }
+  }
+
+  async function handleConcluirDireto() {
+    setLoading(true); setError('')
+    await onIniciar(ordem.id)
+    const res = await onConcluir(ordem.id)
+    setLoading(false)
+    if (!res.ok) setError(res.error || 'Erro.')
   }
 
   const headerBg =
@@ -130,7 +139,13 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
             {ordem.tipo === 'chaparia' ? 'CHAPARIA' : 'ALMOXARIFADO'}
           </p>
           <h2 className="text-xl font-bold text-gray-900">{ordem.produtoNome}</h2>
+          {ordem.pedidoNumero && (
+            <p className="text-sm font-semibold text-indigo-700 mt-1">Pedido N° {ordem.pedidoNumero}</p>
+          )}
           <p className="text-xs text-gray-500 mt-1">Criado em {fmtDate(ordem.criadoEm)} por {ordem.criadoPor}</p>
+          {ordem.previsaoEntrega && (
+            <p className="text-xs text-gray-500 mt-0.5">Previsão de entrega: {ordem.previsaoEntrega}</p>
+          )}
         </div>
 
         <div className="px-6 py-5 space-y-4">
@@ -155,6 +170,20 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
               <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Observação</p>
               <p className="text-sm text-amber-900">{ordem.obs}</p>
+            </div>
+          )}
+
+          {ordem.itensPedido && ordem.itensPedido.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Itens do Pedido</p>
+              <ul className="space-y-1.5">
+                {ordem.itensPedido.map((item, i) => (
+                  <li key={i} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5">
+                    <span className="text-sm text-gray-800 font-medium">{item.produtoNome}</span>
+                    <span className="text-sm font-bold text-gray-600">x{item.quantidade}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -201,13 +230,23 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
             </div>
           )}
 
-          {ordem.status === 'pendente' && (
+          {ordem.status === 'pendente' && !isAlmox && (
             <button
               onClick={() => act(() => onIniciar(ordem.id))}
               disabled={loading}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 text-white text-base font-bold rounded-xl transition-colors"
             >
               {loading ? 'Aguarde...' : isChaparia ? 'Iniciar Produção' : 'Iniciar Separação'}
+            </button>
+          )}
+
+          {ordem.status === 'pendente' && isAlmox && (
+            <button
+              onClick={handleConcluirDireto}
+              disabled={loading}
+              className="w-full py-4 bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:opacity-60 text-white text-base font-bold rounded-xl transition-colors"
+            >
+              {loading ? 'Aguarde...' : 'Concluir Separação'}
             </button>
           )}
 

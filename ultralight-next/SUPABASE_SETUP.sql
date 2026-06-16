@@ -109,7 +109,13 @@ alter table ordens_producao add column if not exists pausas jsonb default '[]'::
 -- 8. Coluna linha em ordens_producao (para Linha 1 / Linha 2 de montagem) ------
 alter table ordens_producao add column if not exists linha text default null;
 
--- 9. Usuários MONTAGEM e EXPEDICAO (senha: 1234) --------------------------------
+-- 10. Colunas para pedidos de almoxarifado ---------------------------------------
+alter table ordens_producao add column if not exists tipo_pedido text default 'estoque';
+alter table ordens_producao add column if not exists pedido_numero text default null;
+alter table ordens_producao add column if not exists previsao_entrega text default null;
+alter table ordens_producao add column if not exists itens_pedido jsonb default null;
+
+-- 11. Usuários MONTAGEM e EXPEDICAO (senha: 1234) --------------------------------
 insert into usuarios (username, senha_hash, role)
 values ('MONTAGEM', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'montagem')
 on conflict (username) do nothing;

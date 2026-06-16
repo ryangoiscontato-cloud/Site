@@ -263,7 +263,7 @@ function SetorView({ ordens, tick, onCancelar, onSelect }: { ordens: OrdemProduc
     <div className="space-y-1">
       <StatusGroup title="Pendentes"    ordens={pendentes}  tick={tick} color="bg-orange-500" defaultOpen={true}  onCancelar={onCancelar} onSelect={onSelect} />
       <StatusGroup title="Em andamento" ordens={andamento}  tick={tick} color="bg-blue-500"   defaultOpen={true}  onSelect={onSelect} />
-      <StatusGroup title="Concluídas"   ordens={concluidas} tick={tick} color="bg-green-500"  defaultOpen={false} onSelect={onSelect} />
+      <StatusGroup title="Histórico"     ordens={concluidas} tick={tick} color="bg-green-500"  defaultOpen={false} onSelect={onSelect} />
     </div>
   )
 }
@@ -317,7 +317,6 @@ export default function Producao({ ordens, cancelarOrdem }: Props) {
           >
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
             Chaparia
-            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{chaparia.length}</span>
           </button>
           <button
             onClick={() => setSetor('almoxarifado')}
@@ -329,7 +328,6 @@ export default function Producao({ ordens, cancelarOrdem }: Props) {
           >
             <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
             Almoxarifado
-            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{almoxarifado.length}</span>
           </button>
           <button
             onClick={() => setSetor('montagem')}
@@ -341,7 +339,6 @@ export default function Producao({ ordens, cancelarOrdem }: Props) {
           >
             <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
             Montagem
-            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{montagem.length}</span>
           </button>
         </div>
 

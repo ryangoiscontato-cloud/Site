@@ -9,7 +9,7 @@ interface Props {
   historico: Movimento[]
 }
 
-type Preset = 'todos' | '7dias' | 'mes' | 'ano' | 'personalizado'
+type Preset = 'hoje' | 'todos' | '7dias' | 'mes' | 'ano' | 'personalizado'
 
 function localISODate(d: Date): string {
   // yyyy-mm-dd in local time (avoids UTC off-by-one)
@@ -29,6 +29,9 @@ export default function Historico({ historico }: Props) {
   const { rangeFrom, rangeTo } = useMemo(() => {
     const now = new Date()
     const today = localISODate(now)
+    if (preset === 'hoje') {
+      return { rangeFrom: today, rangeTo: today }
+    }
     if (preset === '7dias') {
       const d = new Date(); d.setDate(d.getDate() - 6)
       return { rangeFrom: localISODate(d), rangeTo: today }
@@ -75,6 +78,7 @@ export default function Historico({ historico }: Props) {
   }
 
   const presets: { id: Preset; label: string }[] = [
+    { id: 'hoje',          label: 'Hoje' },
     { id: 'todos',         label: 'Tudo' },
     { id: '7dias',         label: 'Últimos 7 dias' },
     { id: 'mes',           label: 'Este mês' },

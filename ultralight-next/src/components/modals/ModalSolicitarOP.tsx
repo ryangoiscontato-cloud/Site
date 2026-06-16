@@ -29,16 +29,24 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
   const [errors, setErrors]         = useState<Record<string, string>>({})
   const [loading, setLoading]       = useState(false)
   const [linha, setLinha]           = useState<'Linha 1' | 'Linha 2' | ''>('')
+  const [tipoPedido, setTipoPedido] = useState<'estoque' | 'pedido'>('estoque')
+  const [pedidoNumero, setPedidoNumero]     = useState('')
+  const [previsaoEntrega, setPrevisaoEntrega] = useState('')
+  const [itensPedido, setItensPedido]       = useState<{produtoId:string;produtoNome:string;quantidade:number}[]>([])
+  const [itemProdId, setItemProdId]         = useState('')
+  const [itemQtd, setItemQtd]               = useState('')
 
   useEffect(() => {
     if (open) {
       setProdutoId(''); setQuantidade(''); setPetg(false); setPetgQtd(''); setObs(''); setErrors({}); setLinha('')
+      setTipoPedido('estoque'); setPedidoNumero(''); setPrevisaoEntrega(''); setItensPedido([]); setItemProdId(''); setItemQtd('')
     }
   }, [open, tab])
 
   useEffect(() => {
     if (open) {
       setProdutoId(''); setQuantidade(''); setPetg(false); setPetgQtd(''); setObs(''); setErrors({}); setLinha('')
+      setTipoPedido('estoque'); setPedidoNumero(''); setPrevisaoEntrega(''); setItensPedido([]); setItemProdId(''); setItemQtd('')
     }
   }, [open])
 
@@ -52,28 +60,56 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
 
   async function handleLancar() {
     const errs: Record<string, string> = {}
-    if (!produtoId) errs.produto = 'Selecione um produto'
-    const qtd = Number(quantidade)
-    if (!quantidade || qtd <= 0) errs.quantidade = 'Informe uma quantidade válida'
-    if (tab === 'chaparia' && petg) {
-      const pqtd = Number(petgQtd)
-      if (!petgQtd || pqtd <= 0) errs.petgQtd = 'Informe a quantidade de PETG'
+
+    if (tab === 'almoxarifado' && tipoPedido === 'pedido') {
+      if (!pedidoNumero.trim()) errs.pedidoNumero = 'Informe o número do pedido'
+      if (itensPedido.length === 0) errs.itensPedido = 'Adicione ao menos um item'
+    } else {
+      if (!produtoId) errs.produto = 'Selecione um produto'
+      const qtd = Number(quantidade)
+      if (!quantidade || qtd <= 0) errs.quantidade = 'Informe uma quantidade válida'
+      if (tab === 'chaparia' && petg) {
+        const pqtd = Number(petgQtd)
+        if (!petgQtd || pqtd <= 0) errs.petgQtd = 'Informe a quantidade de PETG'
+      }
+      if (tab === 'montagem' && !linha) errs.linha = 'Selecione a linha de produção'
     }
-    if (tab === 'montagem' && !linha) errs.linha = 'Selecione a linha de produção'
+
     if (Object.keys(errs).length) { setErrors(errs); return }
 
     setLoading(true)
-    const res = await criarOrdem({
-      tipo: tab,
-      produtoId,
-      produtoNome: produto?.nome ?? '',
-      quantidade: qtd,
-      petgQuantidade: tab === 'chaparia' && petg ? Number(petgQtd) : undefined,
-      obs: obs.trim(),
-      criadoPor: user.username,
-      usuarioDestino: tab === 'chaparia' ? 'CHAPARIA' : tab === 'almoxarifado' ? 'ALMOXARIFADO' : 'MONTAGEM',
-      linha: tab === 'montagem' ? linha : undefined,
-    })
+
+    let res
+    if (tab === 'almoxarifado' && tipoPedido === 'pedido') {
+      res = await criarOrdem({
+        tipo: 'almoxarifado',
+        produtoId: '',
+        produtoNome: `Pedido N° ${pedidoNumero}`,
+        quantidade: 0,
+        obs: obs.trim(),
+        criadoPor: user.username,
+        usuarioDestino: 'ALMOXARIFADO',
+        tipoPedido: 'pedido',
+        pedidoNumero,
+        previsaoEntrega: previsaoEntrega || undefined,
+        itensPedido,
+      })
+    } else {
+      const qtd = Number(quantidade)
+      res = await criarOrdem({
+        tipo: tab,
+        produtoId,
+        produtoNome: produto?.nome ?? '',
+        quantidade: qtd,
+        petgQuantidade: tab === 'chaparia' && petg ? Number(petgQtd) : undefined,
+        obs: obs.trim(),
+        criadoPor: user.username,
+        usuarioDestino: tab === 'chaparia' ? 'CHAPARIA' : tab === 'almoxarifado' ? 'ALMOXARIFADO' : 'MONTAGEM',
+        linha: tab === 'montagem' ? linha : undefined,
+        tipoPedido: tab === 'almoxarifado' ? 'estoque' : undefined,
+      })
+    }
+
     setLoading(false)
 
     if (!res.ok) { onError(res.error || 'Erro ao criar ordem.'); return }
@@ -118,29 +154,137 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          <div>
-            <label className="field-label">Produto *</label>
-            <ProductSearchSelect
-              produtos={produtos}
-              value={produtoId}
-              onChange={id => { setProdutoId(id); setErrors(e => ({ ...e, produto: '' })) }}
-              hasError={!!errors.produto}
-            />
-            {errors.produto && <p className="field-error">{errors.produto}</p>}
-          </div>
+          {tab === 'almoxarifado' && (
+            <div>
+              <label className="field-label">Tipo</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['estoque', 'pedido'] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => { setTipoPedido(t); setErrors({}) }}
+                    className={`py-3 text-sm font-bold rounded-xl border-2 transition-all ${
+                      tipoPedido === t
+                        ? 'bg-indigo-600 border-indigo-600 text-white'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-300'
+                    }`}
+                  >
+                    {t === 'estoque' ? 'Estoque' : 'Pedido'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-          <div>
-            <label className="field-label">Quantidade *</label>
-            <input
-              type="number"
-              min="1"
-              value={quantidade}
-              onChange={e => setQuantidade(e.target.value)}
-              placeholder="Quantidade"
-              className={`form-field ${errors.quantidade ? 'border-red-400 ring-2 ring-red-100' : ''}`}
-            />
-            {errors.quantidade && <p className="field-error">{errors.quantidade}</p>}
-          </div>
+          {!(tab === 'almoxarifado' && tipoPedido === 'pedido') && (
+            <>
+              <div>
+                <label className="field-label">Produto *</label>
+                <ProductSearchSelect
+                  produtos={produtos}
+                  value={produtoId}
+                  onChange={id => { setProdutoId(id); setErrors(e => ({ ...e, produto: '' })) }}
+                  hasError={!!errors.produto}
+                />
+                {errors.produto && <p className="field-error">{errors.produto}</p>}
+              </div>
+
+              <div>
+                <label className="field-label">Quantidade *</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantidade}
+                  onChange={e => setQuantidade(e.target.value)}
+                  placeholder="Quantidade"
+                  className={`form-field ${errors.quantidade ? 'border-red-400 ring-2 ring-red-100' : ''}`}
+                />
+                {errors.quantidade && <p className="field-error">{errors.quantidade}</p>}
+              </div>
+            </>
+          )}
+
+          {tab === 'almoxarifado' && tipoPedido === 'pedido' && (
+            <>
+              <div>
+                <label className="field-label">Número do Pedido *</label>
+                <input
+                  type="text"
+                  value={pedidoNumero}
+                  onChange={e => { setPedidoNumero(e.target.value); setErrors(er => ({ ...er, pedidoNumero: '' })) }}
+                  placeholder="Ex: 12345"
+                  className={`form-field ${errors.pedidoNumero ? 'border-red-400 ring-2 ring-red-100' : ''}`}
+                />
+                {errors.pedidoNumero && <p className="field-error">{errors.pedidoNumero}</p>}
+              </div>
+
+              <div>
+                <label className="field-label">Previsão de Entrega <span className="text-gray-400 font-normal">(opcional)</span></label>
+                <input
+                  type="date"
+                  value={previsaoEntrega}
+                  onChange={e => setPrevisaoEntrega(e.target.value)}
+                  className="form-field"
+                />
+              </div>
+
+              <div>
+                <label className="field-label">Itens do Pedido *</label>
+                <div className="flex gap-2 mb-2">
+                  <div className="flex-1">
+                    <ProductSearchSelect
+                      produtos={produtos}
+                      value={itemProdId}
+                      onChange={id => setItemProdId(id)}
+                      hasError={false}
+                    />
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    value={itemQtd}
+                    onChange={e => setItemQtd(e.target.value)}
+                    placeholder="Qtd"
+                    className="form-field w-20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prod = produtos.find(p => p.id === itemProdId)
+                      const q = Number(itemQtd)
+                      if (!prod || q <= 0) return
+                      setItensPedido(prev => [...prev, { produtoId: prod.id, produtoNome: prod.nome, quantidade: q }])
+                      setItemProdId(''); setItemQtd('')
+                      setErrors(er => ({ ...er, itensPedido: '' }))
+                    }}
+                    className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-colors whitespace-nowrap"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+                {errors.itensPedido && <p className="field-error">{errors.itensPedido}</p>}
+                {itensPedido.length > 0 && (
+                  <ul className="space-y-1.5 mt-2">
+                    {itensPedido.map((item, i) => (
+                      <li key={i} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-3 py-2">
+                        <span className="text-sm text-gray-800 font-medium">{item.produtoNome}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-gray-600">x{item.quantidade}</span>
+                          <button
+                            type="button"
+                            onClick={() => setItensPedido(prev => prev.filter((_, idx) => idx !== i))}
+                            className="text-red-500 hover:text-red-700 font-bold text-base leading-none"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </>
+          )}
 
           {tab === 'chaparia' && (
             <div className="space-y-3">

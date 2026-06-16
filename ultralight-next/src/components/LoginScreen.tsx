@@ -35,11 +35,11 @@ export default function LoginScreen({ onLogin }: Props) {
             alt="Ultralight"
             width={80}
             height={80}
-            className="bg-white rounded-xl object-contain mx-auto mb-4"
+            className="rounded-xl object-contain mx-auto mb-4"
             style={{ width: 80, height: 80 }}
           />
           <h1 className="text-3xl font-extrabold tracking-tight leading-none">ULTRALIGHT</h1>
-          <p className="text-sm text-red-100 uppercase tracking-[0.25em] mt-1.5">GE</p>
+          <p className="text-xs text-red-100 uppercase tracking-[0.18em] mt-1.5">Gestão de Produção</p>
         </div>
 
         {/* Card */}

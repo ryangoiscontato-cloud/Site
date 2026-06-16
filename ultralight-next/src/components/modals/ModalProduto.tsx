@@ -7,21 +7,23 @@ interface Props {
   open: boolean
   produto: Produto | null
   codigosExistentes: string[]
+  categorias: string[]
   onClose: () => void
   onSalvar: (dados: Omit<Produto, 'id'>, editId?: string) => void
 }
 
 const UNIDADES = ['un', 'kg', 'g', 'l', 'ml', 'm', 'm²', 'cx', 'pct', 'par']
 
-export default function ModalProduto({ open, produto, codigosExistentes, onClose, onSalvar }: Props) {
-  const [codigo,       setCodigo]       = useState('')
-  const [nome,         setNome]         = useState('')
-  const [categoria,    setCategoria]    = useState('')
-  const [unidade,      setUnidade]      = useState('un')
-  const [estoqueMin,   setEstoqueMin]   = useState('0')
-  const [saldoIni,     setSaldoIni]     = useState('0')
-  const [codigoBarras, setCodigoBarras] = useState('')
-  const [errors,       setErrors]       = useState<Record<string, string>>({})
+export default function ModalProduto({ open, produto, codigosExistentes, categorias, onClose, onSalvar }: Props) {
+  const [codigo,        setCodigo]        = useState('')
+  const [nome,          setNome]          = useState('')
+  const [categoria,     setCategoria]     = useState('')
+  const [unidade,       setUnidade]       = useState('un')
+  const [estoqueMin,    setEstoqueMin]    = useState('0')
+  const [saldoIni,      setSaldoIni]      = useState('0')
+  const [codigoBarras,  setCodigoBarras]  = useState('')
+  const [novaCategoria, setNovaCategoria] = useState(false)
+  const [errors,        setErrors]        = useState<Record<string, string>>({})
   const codigoBarrasRef = useRef(codigoBarras)
 
   const isEdit = !!produto
@@ -35,11 +37,17 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
       setCodigo(produto.codigo); setNome(produto.nome); setCategoria(produto.categoria || '')
       setUnidade(produto.unidade); setEstoqueMin(String(produto.estoqueMin)); setSaldoIni(String(produto.saldo))
       setCodigoBarras(produto.codigoBarras || '')
+      // auto-switch to text input if category doesn't exist in the list
+      if (produto.categoria && !categorias.includes(produto.categoria)) {
+        setNovaCategoria(true)
+      } else {
+        setNovaCategoria(false)
+      }
     } else {
       setCodigo(''); setNome(''); setCategoria(''); setUnidade('un'); setEstoqueMin('0'); setSaldoIni('0')
-      setCodigoBarras('')
+      setCodigoBarras(''); setNovaCategoria(false)
     }
-  }, [open, produto])
+  }, [open, produto, categorias])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -144,9 +152,45 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="field-label">Categoria</label>
-              <input type="text" value={categoria} onChange={e => setCategoria(e.target.value)}
-                placeholder="Ex: Eletrônicos, Ferramentas..." className="form-field" />
+              <div className="flex items-center justify-between mb-1">
+                <label className="field-label mb-0">Categoria</label>
+                {novaCategoria && (
+                  <button
+                    type="button"
+                    onClick={() => { setNovaCategoria(false); setCategoria('') }}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    ← Voltar
+                  </button>
+                )}
+              </div>
+              {novaCategoria ? (
+                <input
+                  type="text"
+                  value={categoria}
+                  onChange={e => setCategoria(e.target.value)}
+                  placeholder="Ex: Eletrônicos, Ferramentas..."
+                  className="form-field"
+                  autoFocus
+                />
+              ) : (
+                <select
+                  value={categoria}
+                  onChange={e => {
+                    if (e.target.value === '__nova__') {
+                      setNovaCategoria(true)
+                      setCategoria('')
+                    } else {
+                      setCategoria(e.target.value)
+                    }
+                  }}
+                  className="form-field"
+                >
+                  <option value="">Sem categoria</option>
+                  {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                  <option value="__nova__">+ Nova categoria...</option>
+                </select>
+              )}
             </div>
             <div>
               <label className="field-label">Estoque Mínimo</label>

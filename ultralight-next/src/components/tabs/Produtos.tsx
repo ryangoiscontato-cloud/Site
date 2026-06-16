@@ -97,51 +97,44 @@ export default function Produtos({ produtos, onNovo, onEditar, onExcluir }: Prop
       ) : (
         <>
           {/* ── Mobile: card list ── */}
-          <div className="lg:hidden space-y-3">
+          <div className="lg:hidden space-y-2">
             {filtered.map(p => (
-              <div key={p.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="px-4 pt-4 pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <code className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-mono font-semibold">{p.codigo}</code>
-                      <p className="font-bold text-gray-900 mt-1.5 text-base leading-snug">{p.nome}</p>
-                      {p.categoria && <p className="text-sm text-gray-500 mt-0.5">{p.categoria}</p>}
-                    </div>
+              <div key={p.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-3">
+                <div className="flex items-start gap-2">
+                  {/* Left: code, name, category */}
+                  <div className="flex-1 min-w-0">
+                    <code className="text-[0.65rem] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono font-semibold">{p.codigo}</code>
+                    <p className="font-semibold text-gray-900 mt-1 text-sm leading-snug truncate">{p.nome}</p>
+                    {p.categoria && <p className="text-xs text-gray-400 mt-0.5 truncate">{p.categoria}</p>}
+                  </div>
+                  {/* Right: status + saldo + actions */}
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                     <StatusBadge p={p} />
-                  </div>
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-                    <div className="text-center">
-                      <p className="text-[0.65rem] text-gray-400 uppercase font-semibold tracking-wide">Saldo</p>
-                      <p className={`text-xl leading-none mt-0.5 ${qtyColor(p)}`}>{p.saldo}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{p.unidade}</p>
+                    <p className={`text-sm font-bold leading-none ${qtyColor(p)}`}>
+                      {p.saldo} <span className="text-xs font-normal text-gray-400">{p.unidade}</span>
+                      {p.estoqueMin > 0 && <span className="text-xs font-normal text-gray-400 ml-1">| mín: {p.estoqueMin}</span>}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <button
+                        onClick={() => onEditar(p)}
+                        title="Editar"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 active:bg-blue-100 transition-all"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => onExcluir(p)}
+                        title="Excluir"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 active:bg-red-100 transition-all"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                        </svg>
+                      </button>
                     </div>
-                    <div className="w-px h-10 bg-gray-100" />
-                    <div className="text-center">
-                      <p className="text-[0.65rem] text-gray-400 uppercase font-semibold tracking-wide">Mínimo</p>
-                      <p className="text-xl leading-none mt-0.5 text-gray-700">{p.estoqueMin}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{p.unidade}</p>
-                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 border-t border-gray-100">
-                  <button
-                    onClick={() => onEditar(p)}
-                    className="flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 transition-colors border-r border-gray-100"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-                    </svg>
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => onExcluir(p)}
-                    className="flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 active:bg-red-200 transition-colors"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
-                    </svg>
-                    Excluir
-                  </button>
                 </div>
               </div>
             ))}

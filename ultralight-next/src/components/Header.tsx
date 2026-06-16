@@ -44,14 +44,14 @@ export default function Header({ user, onGerenciarUsuarios, onSolicitarOP, onLog
             alt="Ultralight"
             width={40}
             height={40}
-            className="bg-white rounded-xl object-contain flex-shrink-0 w-10 h-10 p-0.5"
+            className="rounded-xl object-contain flex-shrink-0 w-10 h-10"
           />
           <div className="min-w-0">
             <span className="block text-lg sm:text-[1.35rem] font-extrabold text-[#0f2d5e] leading-none tracking-tight">
               ULTRALIGHT
             </span>
-            <span className="block text-[0.62rem] sm:text-[0.68rem] text-gray-400 uppercase tracking-[0.18em] mt-0.5">
-              GE
+            <span className="block text-[0.6rem] sm:text-[0.65rem] text-gray-400 uppercase tracking-[0.12em] mt-0.5">
+              Gestão de Produção
             </span>
           </div>
         </div>

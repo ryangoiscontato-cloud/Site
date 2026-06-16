@@ -28,15 +28,15 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
   const selected = selectedId ? ordens.find(o => o.id === selectedId) ?? null : null
   const pendentes = minhas.filter(o => o.status !== 'concluida').length
 
-  const ordensLabel    = isAlmox ? 'Ordens de Separação' : isMontagem ? 'Ordens de Montagem' : 'Ordens de Produção'
-  const historicoLabel = isAlmox ? 'Histórico de Separação' : isMontagem ? 'Histórico de Montagem' : 'Histórico de Produção'
+  const ordensLabel    = isAlmox ? 'Ordens de Separação' : 'Ordens de Produção'
+  const historicoLabel = isAlmox ? 'Histórico de Separação' : 'Histórico de Produção'
 
   const WorkerHeader = () => (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
       <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Ultralight" width={36} height={36} className="bg-white rounded-xl object-contain w-9 h-9 p-0.5" />
+          <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-contain w-9 h-9" />
           <span className="font-extrabold text-[#0f2d5e] text-lg tracking-tight">ULTRALIGHT</span>
         </div>
         <div className="flex items-center gap-2">

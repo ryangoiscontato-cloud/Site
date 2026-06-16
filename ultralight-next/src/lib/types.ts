@@ -37,6 +37,12 @@ export interface PausaOrdem {
   fim?: string
 }
 
+export interface ItemPedido {
+  produtoId: string
+  produtoNome: string
+  quantidade: number
+}
+
 export interface OrdemProducao {
   id: string
   tipo: 'chaparia' | 'almoxarifado' | 'montagem'
@@ -46,6 +52,10 @@ export interface OrdemProducao {
   quantidade: number
   petgQuantidade?: number
   linha?: string
+  tipoPedido?: 'estoque' | 'pedido'
+  pedidoNumero?: string
+  previsaoEntrega?: string
+  itensPedido?: ItemPedido[]
   obs: string
   criadoPor: string
   criadoEm: string

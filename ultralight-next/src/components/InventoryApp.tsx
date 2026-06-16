@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { Produto, TabId } from '@/lib/types'
 import { useInventory } from '@/hooks/useInventory'
 import { useAuth } from '@/hooks/useAuth'
@@ -93,6 +93,10 @@ export default function InventoryApp() {
   }
 
   const codigosExistentes = produtos.map(p => p.codigo)
+  const categorias = useMemo(
+    () => [...new Set(produtos.map(p => p.categoria).filter(Boolean))] as string[],
+    [produtos]
+  )
 
   if (!isConfigured) {
     return (
@@ -183,10 +187,10 @@ export default function InventoryApp() {
           <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="Ultralight" width={40} height={40} className="bg-white rounded-xl object-contain w-10 h-10 p-0.5" />
+              <img src="/logo.png" alt="Ultralight" width={40} height={40} className="rounded-xl object-contain w-10 h-10" />
               <div>
                 <span className="block font-extrabold text-[#0f2d5e] text-lg tracking-tight leading-none">ULTRALIGHT</span>
-                <span className="block text-[0.6rem] text-gray-400 uppercase tracking-widest mt-0.5">GE</span>
+                <span className="block text-[0.6rem] text-gray-400 uppercase tracking-[0.12em] mt-0.5">Gestão de Produção</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -373,6 +377,7 @@ export default function InventoryApp() {
         open={modalProduto}
         produto={produtoEdit}
         codigosExistentes={codigosExistentes}
+        categorias={categorias}
         onClose={() => { setModalProduto(false); setProdutoEdit(null) }}
         onSalvar={handleSalvarProduto}
       />

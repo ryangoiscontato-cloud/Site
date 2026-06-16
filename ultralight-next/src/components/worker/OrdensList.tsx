@@ -16,46 +16,61 @@ function StatusBadge({ status }: { status: OrdemProducao['status'] }) {
   return <span className="badge-green">Concluída</span>
 }
 
+const STATUS_PRIORITY: Record<string, number> = { em_producao: 0, pausada: 1, pendente: 2 }
+
 export default function OrdensList({ ordens, user, onSelect }: Props) {
-  const dest = user.username.toUpperCase() as 'CHAPARIA' | 'ALMOXARIFADO'
+  const dest = user.username.toUpperCase()
   const minhas = ordens.filter(o => o.usuarioDestino === dest)
 
-  const active  = minhas.filter(o => o.status !== 'concluida')
-  const done    = minhas.filter(o => o.status === 'concluida')
+  const active = [...minhas.filter(o => o.status !== 'concluida' && o.status !== 'cancelada')]
+    .sort((a, b) => (STATUS_PRIORITY[a.status] ?? 3) - (STATUS_PRIORITY[b.status] ?? 3))
+  const done = minhas.filter(o => o.status === 'concluida')
 
-  if (minhas.length === 0) {
+  if (minhas.filter(o => o.status !== 'cancelada').length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
         <svg className="w-14 h-14 text-gray-200" viewBox="0 0 24 24" fill="currentColor">
           <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
         </svg>
-        <p className="text-sm">Nenhuma ordem de produção pendente.</p>
+        <p className="text-sm">Nenhuma ordem pendente.</p>
       </div>
     )
   }
 
   function Card({ o }: { o: OrdemProducao }) {
+    const isPedido = o.tipoPedido === 'pedido'
+    const title = isPedido ? `Pedido N° ${o.pedidoNumero ?? '—'}` : o.produtoNome
     return (
       <button
         onClick={() => onSelect(o)}
         className="w-full text-left bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all active:scale-[0.99]"
       >
         <div className="flex items-start justify-between gap-3 mb-3">
-          <p className="font-bold text-gray-900 text-base leading-snug">{o.produtoNome}</p>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 text-base leading-snug truncate">{title}</p>
+            {isPedido && o.itensPedido && (
+              <p className="text-xs text-gray-500 mt-0.5">{o.itensPedido.length} {o.itensPedido.length === 1 ? 'item' : 'itens'}</p>
+            )}
+            {isPedido && o.previsaoEntrega && (
+              <p className="text-xs text-gray-400 mt-0.5">Entrega: {o.previsaoEntrega}</p>
+            )}
+          </div>
           <StatusBadge status={o.status} />
         </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm mb-3">
-          <div>
-            <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">Quantidade</span>
-            <p className="font-bold text-gray-900">{o.quantidade}</p>
-          </div>
-          {o.petgQuantidade != null && (
+        {!isPedido && (
+          <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm mb-3">
             <div>
-              <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">PETG</span>
-              <p className="font-bold text-gray-900">{o.petgQuantidade}</p>
+              <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">Quantidade</span>
+              <p className="font-bold text-gray-900">{o.quantidade}</p>
             </div>
-          )}
-        </div>
+            {o.petgQuantidade != null && (
+              <div>
+                <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">PETG</span>
+                <p className="font-bold text-gray-900">{o.petgQuantidade}</p>
+              </div>
+            )}
+          </div>
+        )}
         {o.obs && <p className="text-sm text-gray-500 mb-2">{o.obs}</p>}
         <p className="text-xs text-gray-400">{fmtDate(o.criadoEm)}</p>
       </button>
@@ -67,7 +82,7 @@ export default function OrdensList({ ordens, user, onSelect }: Props) {
       {active.length > 0 && (
         <div>
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">
-            Em andamento ({active.length})
+            Ordens ativas ({active.length})
           </h2>
           <div className="space-y-3">
             {active.map(o => <Card key={o.id} o={o} />)}
