@@ -17,7 +17,7 @@ interface Props {
   onError: (msg: string) => void
 }
 
-type TabOP = 'chaparia' | 'almoxarifado'
+type TabOP = 'chaparia' | 'almoxarifado' | 'montagem'
 
 export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onClose, onSuccess, onError }: Props) {
   const [tab, setTab]               = useState<TabOP>('chaparia')
@@ -28,16 +28,17 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
   const [obs, setObs]               = useState('')
   const [errors, setErrors]         = useState<Record<string, string>>({})
   const [loading, setLoading]       = useState(false)
+  const [linha, setLinha]           = useState<'Linha 1' | 'Linha 2' | ''>('')
 
   useEffect(() => {
     if (open) {
-      setProdutoId(''); setQuantidade(''); setPetg(false); setPetgQtd(''); setObs(''); setErrors({})
+      setProdutoId(''); setQuantidade(''); setPetg(false); setPetgQtd(''); setObs(''); setErrors({}); setLinha('')
     }
   }, [open, tab])
 
   useEffect(() => {
     if (open) {
-      setProdutoId(''); setQuantidade(''); setPetg(false); setPetgQtd(''); setObs(''); setErrors({})
+      setProdutoId(''); setQuantidade(''); setPetg(false); setPetgQtd(''); setObs(''); setErrors({}); setLinha('')
     }
   }, [open])
 
@@ -58,6 +59,7 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
       const pqtd = Number(petgQtd)
       if (!petgQtd || pqtd <= 0) errs.petgQtd = 'Informe a quantidade de PETG'
     }
+    if (tab === 'montagem' && !linha) errs.linha = 'Selecione a linha de produção'
     if (Object.keys(errs).length) { setErrors(errs); return }
 
     setLoading(true)
@@ -69,12 +71,13 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
       petgQuantidade: tab === 'chaparia' && petg ? Number(petgQtd) : undefined,
       obs: obs.trim(),
       criadoPor: user.username,
-      usuarioDestino: tab === 'chaparia' ? 'CHAPARIA' : 'ALMOXARIFADO',
+      usuarioDestino: tab === 'chaparia' ? 'CHAPARIA' : tab === 'almoxarifado' ? 'ALMOXARIFADO' : 'MONTAGEM',
+      linha: tab === 'montagem' ? linha : undefined,
     })
     setLoading(false)
 
     if (!res.ok) { onError(res.error || 'Erro ao criar ordem.'); return }
-    onSuccess(`Ordem de produção lançada para ${tab === 'chaparia' ? 'CHAPARIA' : 'ALMOXARIFADO'}!`)
+    onSuccess(`Ordem de produção lançada para ${tab === 'chaparia' ? 'CHAPARIA' : tab === 'almoxarifado' ? 'ALMOXARIFADO' : 'MONTAGEM'}!`)
     onClose()
   }
 
@@ -99,7 +102,7 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
         </div>
 
         <div className="flex border-b border-gray-200 sticky top-[73px] bg-white z-10">
-          {(['chaparia', 'almoxarifado'] as TabOP[]).map(t => (
+          {(['chaparia', 'almoxarifado', 'montagem'] as TabOP[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -109,7 +112,7 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {t === 'chaparia' ? 'Chaparia' : 'Almoxarifado'}
+              {t === 'chaparia' ? 'Chaparia' : t === 'almoxarifado' ? 'Almoxarifado' : 'Montagem'}
             </button>
           ))}
         </div>
@@ -164,6 +167,29 @@ export default function ModalSolicitarOP({ open, produtos, user, criarOrdem, onC
                   {errors.petgQtd && <p className="field-error">{errors.petgQtd}</p>}
                 </div>
               )}
+            </div>
+          )}
+
+          {tab === 'montagem' && (
+            <div>
+              <label className="field-label">Linha de Produção *</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['Linha 1', 'Linha 2'] as const).map(l => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => { setLinha(l); setErrors(e => ({ ...e, linha: '' })) }}
+                    className={`py-3 text-sm font-bold rounded-xl border-2 transition-all ${
+                      linha === l
+                        ? 'bg-teal-600 border-teal-600 text-white'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-teal-300'
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              {errors.linha && <p className="field-error">{errors.linha}</p>}
             </div>
           )}
 

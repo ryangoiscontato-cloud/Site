@@ -70,7 +70,7 @@ export default function NavTabs({ active, onChange, userRole, adminMode }: NavTa
 
   return (
     <>
-      <nav className="hidden lg:block bg-white border-b border-gray-200 sticky top-16 z-40">
+      <nav className={`${adminMode ? 'hidden' : 'hidden lg:block'} bg-white border-b border-gray-200 sticky top-16 z-40`}>
         <div className="max-w-7xl mx-auto px-6 flex">
           {tabs.map(tab => (
             <button

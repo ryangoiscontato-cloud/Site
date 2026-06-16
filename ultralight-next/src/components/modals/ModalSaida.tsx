@@ -1,10 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Produto } from '@/lib/types'
 import ProductSearchSelect from '@/components/ProductSearchSelect'
-import dynamic from 'next/dynamic'
-const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 
 const EMPRESAS = ['ULTRALIGHT', 'TECNOFLY', 'UL BRASIL', 'ULTRAFOODS', 'PESTSTORE']
 
@@ -23,9 +21,11 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
   const [responsavel,    setResponsavel]    = useState('')
   const [empresaDestino, setEmpresaDestino] = useState('')
   const [errors,         setErrors]         = useState<Record<string, string>>({})
-  const [scanning, setScanning] = useState(false)
 
   const produto = produtos.find(p => p.id === produtoId)
+
+  const produtosRef = useRef(produtos)
+  useEffect(() => { produtosRef.current = produtos }, [produtos])
 
   useEffect(() => {
     if (open) {
@@ -40,16 +40,37 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose])
 
-  function handleScanned(code: string) {
-    setScanning(false)
-    const found = produtos.find(p => (p.codigoBarras || '').trim() === code.trim())
-    if (found) {
-      setProdutoId(found.id)
-      setErrors(e => ({ ...e, produto: '' }))
-    } else {
-      setErrors(e => ({ ...e, produto: `Código "${code}" não encontrado` }))
+  useEffect(() => {
+    if (!open) return
+    let buf = ''
+    let lastTime = 0
+
+    function onKey(e: KeyboardEvent) {
+      const now = Date.now()
+      if (e.key === 'Enter') {
+        if (buf.length >= 3) {
+          const code = buf.trim()
+          const found = produtosRef.current.find(p => (p.codigoBarras || '').trim() === code)
+          if (found) {
+            setProdutoId(found.id)
+            setErrors(ev => ({ ...ev, produto: '' }))
+          } else {
+            setErrors(ev => ({ ...ev, produto: `Código "${code}" não encontrado` }))
+          }
+        }
+        buf = ''
+        lastTime = 0
+        return
+      }
+      if (e.key.length !== 1) return
+      if (lastTime > 0 && now - lastTime > 80) buf = ''
+      buf += e.key
+      lastTime = now
     }
-  }
+
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   function handleConfirm() {
     const errs: Record<string, string> = {}
@@ -90,16 +111,10 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="field-label !mb-0">Produto *</label>
-              <button
-                type="button"
-                onClick={() => setScanning(true)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#0f2d5e] hover:text-blue-700 transition-colors"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <path strokeLinecap="round" d="M6 5v14M10 5v14M14 5v14M18 5v14"/>
-                </svg>
-                Picking
-              </button>
+              <span className="flex items-center gap-1 text-[0.65rem] font-semibold text-green-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
+                Scanner ativo
+              </span>
             </div>
             <ProductSearchSelect
               produtos={produtos}
@@ -194,7 +209,6 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
           </button>
         </div>
       </div>
-        {scanning && <BarcodeScanner onScan={handleScanned} onClose={() => setScanning(false)} />}
     </div>
   )
 }

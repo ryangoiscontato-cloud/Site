@@ -19,6 +19,7 @@ interface OrdemRow {
   iniciado_em: string | null
   concluido_em: string | null
   usuario_destino: string
+  linha: string | null
   pausas: PausaOrdem[] | null
 }
 
@@ -38,6 +39,7 @@ function mapOrdem(r: OrdemRow): OrdemProducao {
     concluidoEm: r.concluido_em ?? undefined,
     usuarioDestino: r.usuario_destino as OrdemProducao['usuarioDestino'],
     pausas: r.pausas ?? [],
+    linha: r.linha ?? undefined,
   }
 }
 
@@ -80,14 +82,15 @@ export function useOrdens() {
   }, [fetchAll])
 
   const criarOrdem = useCallback(async (dados: {
-    tipo: 'chaparia' | 'almoxarifado'
+    tipo: 'chaparia' | 'almoxarifado' | 'montagem'
     produtoId: string
     produtoNome: string
     quantidade: number
     petgQuantidade?: number
     obs: string
     criadoPor: string
-    usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO'
+    usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO' | 'MONTAGEM'
+    linha?: string
   }): Promise<{ ok: boolean; error?: string }> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
 
@@ -103,6 +106,7 @@ export function useOrdens() {
       criado_por: dados.criadoPor,
       criado_em: new Date().toISOString(),
       usuario_destino: dados.usuarioDestino,
+      linha: dados.linha ?? null,
       pausas: [],
     })
 
@@ -196,5 +200,18 @@ export function useOrdens() {
     return { ok: true }
   }, [fetchAll])
 
-  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, hydrated }
+  const cancelarOrdem = useCallback(async (id: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
+
+    const { error } = await supabase
+      .from('ordens_producao')
+      .update({ status: 'cancelada' })
+      .eq('id', id)
+
+    if (error) return { ok: false, error: 'Erro ao cancelar ordem.' }
+    await fetchAll()
+    return { ok: true }
+  }, [fetchAll])
+
+  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, hydrated }
 }

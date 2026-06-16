@@ -105,3 +105,15 @@ on conflict (username) do nothing;
 -- 7. Coluna pausas em ordens_producao (para pausas com motivo) -----------------
 -- Execute este bloco se a tabela ja existe sem a coluna pausas.
 alter table ordens_producao add column if not exists pausas jsonb default '[]'::jsonb not null;
+
+-- 8. Coluna linha em ordens_producao (para Linha 1 / Linha 2 de montagem) ------
+alter table ordens_producao add column if not exists linha text default null;
+
+-- 9. Usuários MONTAGEM e EXPEDICAO (senha: 1234) --------------------------------
+insert into usuarios (username, senha_hash, role)
+values ('MONTAGEM', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'montagem')
+on conflict (username) do nothing;
+
+insert into usuarios (username, senha_hash, role)
+values ('EXPEDICAO', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'expedicao')
+on conflict (username) do nothing;

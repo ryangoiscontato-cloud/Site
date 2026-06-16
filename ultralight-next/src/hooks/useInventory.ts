@@ -67,9 +67,78 @@ export function useInventory(currentUser: Usuario | null) {
   const [historico, setHistorico] = useState<Movimento[]>([])
   const [hydrated, setHydrated]   = useState(false)
   const [error, setError]         = useState<string | null>(null)
+  const [isOnline, setIsOnline]         = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  const [pendingSync, setPendingSync]   = useState(0)
   const userRef = useRef(currentUser)
 
   useEffect(() => { userRef.current = currentUser }, [currentUser])
+
+  // ── Shared fetch (also used by flushOfflineQueue) ──────────────────────────
+  const fetchAll = useCallback(async () => {
+    if (!supabase) return
+    const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
+
+    try {
+      const [{ data: prod }, { data: hist }] = await withTimeout(
+        Promise.all([
+          supabase.from('produtos').select('*').order('codigo'),
+          supabase.from('historico').select('*').order('data'),
+        ]),
+        8000
+      )
+      if (prod) setProdutos((prod as ProdutoRow[]).map(mapProduto))
+      if (prod) {
+        try { localStorage.setItem('ul_cache_prod', JSON.stringify(prod)) } catch {}
+      }
+      if (hist) setHistorico((hist as HistoricoRow[]).map(mapMovimento))
+      if (hist) {
+        try { localStorage.setItem('ul_cache_hist', JSON.stringify(hist)) } catch {}
+      }
+    } catch (e) {
+      setError(
+        e instanceof Error && e.message === 'timeout'
+          ? 'Tempo esgotado. Verifique sua conexão com o Supabase.'
+          : 'Erro ao carregar dados. Verifique a conexão.'
+      )
+      try {
+        const cp = localStorage.getItem('ul_cache_prod')
+        const ch = localStorage.getItem('ul_cache_hist')
+        if (cp) setProdutos((JSON.parse(cp) as ProdutoRow[]).map(mapProduto))
+        if (ch) setHistorico((JSON.parse(ch) as HistoricoRow[]).map(mapMovimento))
+      } catch {}
+    } finally {
+      setHydrated(true)
+    }
+  }, [])
+
+  // ── Flush offline queue ──────────────────────────────────────────────────────
+  const flushOfflineQueue = useCallback(async () => {
+    if (!supabase) return
+    const raw = localStorage.getItem('ul_offline_queue')
+    if (!raw) return
+    let queue: Array<{
+      type: 'entrada' | 'saida'
+      produtoId: string
+      delta: number
+      hist: Record<string, unknown>
+    }>
+    try { queue = JSON.parse(raw) } catch { return }
+    if (queue.length === 0) return
+
+    for (const op of queue) {
+      const { data: row } = await supabase.from('produtos').select('saldo').eq('id', op.produtoId).single()
+      if (row) {
+        const novoSaldo = Math.max(0, (row as { saldo: number }).saldo + op.delta)
+        await supabase.from('produtos').update({ saldo: novoSaldo }).eq('id', op.produtoId)
+      }
+      await supabase.from('historico').insert(op.hist)
+    }
+
+    localStorage.removeItem('ul_offline_queue')
+    setPendingSync(0)
+    await fetchAll()
+  }, [fetchAll])
 
   // ── Initial fetch + realtime subscriptions ─────────────────────────────────
   useEffect(() => {
@@ -81,33 +150,17 @@ export function useInventory(currentUser: Usuario | null) {
 
     let active = true
 
-    async function fetchAll() {
-      const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
-        Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
-
+    async function init() {
       try {
-        const [{ data: prod }, { data: hist }] = await withTimeout(
-          Promise.all([
-            supabase!.from('produtos').select('*').order('codigo'),
-            supabase!.from('historico').select('*').order('data'),
-          ]),
-          8000
-        )
-        if (!active) return
-        if (prod) setProdutos((prod as ProdutoRow[]).map(mapProduto))
-        if (hist) setHistorico((hist as HistoricoRow[]).map(mapMovimento))
-      } catch (e) {
-        if (active) setError(
-          e instanceof Error && e.message === 'timeout'
-            ? 'Tempo esgotado. Verifique sua conexão com o Supabase.'
-            : 'Erro ao carregar dados. Verifique a conexão.'
-        )
-      } finally {
-        if (active) setHydrated(true)
-      }
+        const cp = localStorage.getItem('ul_cache_prod')
+        const ch = localStorage.getItem('ul_cache_hist')
+        if (cp && active) setProdutos((JSON.parse(cp) as ProdutoRow[]).map(mapProduto))
+        if (ch && active) setHistorico((JSON.parse(ch) as HistoricoRow[]).map(mapMovimento))
+      } catch {}
+      await fetchAll()
     }
 
-    fetchAll()
+    void init()
 
     const channel = supabase
       .channel('inventory-changes')
@@ -123,11 +176,21 @@ export function useInventory(currentUser: Usuario | null) {
       })
       .subscribe()
 
+    function handleOnline() {
+      setIsOnline(true)
+      void flushOfflineQueue()
+    }
+    function handleOffline() { setIsOnline(false) }
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
     return () => {
       active = false
       supabase!.removeChannel(channel)
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
     }
-  }, [])
+  }, [fetchAll, flushOfflineQueue])
 
   // ── Entrada ─────────────────────────────────────────────────────────────────
   const registrarEntrada = useCallback((produtoId: string, qtd: number, obs: string) => {
@@ -137,16 +200,28 @@ export function useInventory(currentUser: Usuario | null) {
     const novoSaldo = produto.saldo + qtd
     const u = userRef.current
 
-    // optimistic
     setProdutos(prev => prev.map(p => p.id === produtoId ? { ...p, saldo: novoSaldo } : p))
+
+    const histRow = {
+      id: uid(), produto_id: produtoId, produto_nome: produto.nome, tipo: 'entrada',
+      qtd, obs, data: new Date().toISOString(),
+      usuario_id: u?.id ?? null, usuario_nome: u?.username ?? null,
+    }
+
+    if (!navigator.onLine) {
+      try {
+        const raw = localStorage.getItem('ul_offline_queue')
+        const queue = raw ? JSON.parse(raw) : []
+        queue.push({ type: 'entrada', produtoId, delta: qtd, hist: histRow })
+        localStorage.setItem('ul_offline_queue', JSON.stringify(queue))
+        setPendingSync(q => q + 1)
+      } catch {}
+      return
+    }
 
     void (async () => {
       await supabase!.from('produtos').update({ saldo: novoSaldo }).eq('id', produtoId)
-      await supabase!.from('historico').insert({
-        id: uid(), produto_id: produtoId, produto_nome: produto.nome, tipo: 'entrada',
-        qtd, obs, data: new Date().toISOString(),
-        usuario_id: u?.id ?? null, usuario_nome: u?.username ?? null,
-      })
+      await supabase!.from('historico').insert(histRow)
     })()
   }, [produtos])
 
@@ -160,14 +235,27 @@ export function useInventory(currentUser: Usuario | null) {
 
     setProdutos(prev => prev.map(p => p.id === produtoId ? { ...p, saldo: novoSaldo } : p))
 
+    const histRow = {
+      id: uid(), produto_id: produtoId, produto_nome: produto.nome, tipo: 'saida',
+      qtd, obs, data: new Date().toISOString(),
+      responsavel: responsavel ?? null, empresa_destino: empresaDestino ?? null,
+      usuario_id: u?.id ?? null, usuario_nome: u?.username ?? null,
+    }
+
+    if (!navigator.onLine) {
+      try {
+        const raw = localStorage.getItem('ul_offline_queue')
+        const queue = raw ? JSON.parse(raw) : []
+        queue.push({ type: 'saida', produtoId, delta: -qtd, hist: histRow })
+        localStorage.setItem('ul_offline_queue', JSON.stringify(queue))
+        setPendingSync(q => q + 1)
+      } catch {}
+      return
+    }
+
     void (async () => {
       await supabase!.from('produtos').update({ saldo: novoSaldo }).eq('id', produtoId)
-      await supabase!.from('historico').insert({
-        id: uid(), produto_id: produtoId, produto_nome: produto.nome, tipo: 'saida',
-        qtd, obs, data: new Date().toISOString(),
-        responsavel: responsavel ?? null, empresa_destino: empresaDestino ?? null,
-        usuario_id: u?.id ?? null, usuario_nome: u?.username ?? null,
-      })
+      await supabase!.from('historico').insert(histRow)
     })()
   }, [produtos])
 
@@ -223,6 +311,8 @@ export function useInventory(currentUser: Usuario | null) {
     historico,
     hydrated,
     error,
+    isOnline,
+    pendingSync,
     registrarEntrada,
     registrarSaida,
     adicionarProduto,

@@ -8,8 +8,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ULTRALIGHT — Gestão de Estoque",
-  description: "Sistema de controle de estoque Ultralight",
+  title: "ULTRALIGHT — GE",
+  description: "Gestão de Estoque · Ultralight",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

@@ -6,9 +6,10 @@ import { fmtDate } from '@/lib/utils'
 
 interface Props {
   ordens: OrdemProducao[]
+  cancelarOrdem?: (id: string) => Promise<{ ok: boolean; error?: string }>
 }
 
-type Setor = 'chaparia' | 'almoxarifado'
+type Setor = 'chaparia' | 'almoxarifado' | 'montagem'
 
 function StatusBadge({ status }: { status: OrdemProducao['status'] }) {
   if (status === 'pendente')
@@ -17,6 +18,8 @@ function StatusBadge({ status }: { status: OrdemProducao['status'] }) {
     return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"><span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block flex-shrink-0" />Em andamento</span>
   if (status === 'pausada')
     return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block flex-shrink-0" />Pausada</span>
+  if (status === 'cancelada')
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Cancelada</span>
   return <span className="badge-green">Concluída</span>
 }
 
@@ -43,11 +46,129 @@ function elapsedStr(ms: number): string {
   return `${s}s`
 }
 
-function OrdemCard({ ordem, tick }: { ordem: OrdemProducao; tick: number }) {
+function OrdemDetailPanel({ ordem, onClose, onCancelar }: {
+  ordem: OrdemProducao
+  onClose: () => void
+  onCancelar?: (id: string) => Promise<{ ok: boolean; error?: string }>
+}) {
+  const [cancelling, setCancelling] = useState(false)
+
+  async function handleCancelar() {
+    if (!onCancelar) return
+    setCancelling(true)
+    await onCancelar(ordem.id)
+    setCancelling(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl shadow-2xl animate-slide-up overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h3 className="text-base font-bold text-gray-900">Detalhes da Ordem</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 text-xl leading-none transition-colors">&times;</button>
+        </div>
+        <div className="px-5 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
+          <div>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Produto</p>
+            <p className="font-bold text-gray-900 mt-0.5">{ordem.produtoNome}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Status</p>
+              <div className="mt-0.5"><StatusBadge status={ordem.status} /></div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Setor</p>
+              <p className="font-semibold text-gray-900 mt-0.5 capitalize">{ordem.tipo}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Quantidade</p>
+              <p className="font-bold text-gray-900 mt-0.5">{ordem.quantidade}</p>
+            </div>
+            {ordem.petgQuantidade != null && (
+              <div>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">PETG</p>
+                <p className="font-bold text-gray-900 mt-0.5">{ordem.petgQuantidade}</p>
+              </div>
+            )}
+            {ordem.linha && (
+              <div>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Linha</p>
+                <p className="font-bold text-teal-700 mt-0.5">{ordem.linha}</p>
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Criado por</p>
+              <p className="font-semibold text-gray-900 mt-0.5">{ordem.criadoPor}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Criado em</p>
+              <p className="font-semibold text-gray-900 mt-0.5">{fmtDate(ordem.criadoEm)}</p>
+            </div>
+          </div>
+          {ordem.iniciadoEm && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Iniciado em</p>
+                <p className="font-semibold text-gray-900 mt-0.5">{fmtDate(ordem.iniciadoEm)}</p>
+              </div>
+              {ordem.concluidoEm && (
+                <div>
+                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Concluído em</p>
+                  <p className="font-semibold text-gray-900 mt-0.5">{fmtDate(ordem.concluidoEm)}</p>
+                </div>
+              )}
+            </div>
+          )}
+          {ordem.obs && (
+            <div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Observação</p>
+              <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 mt-0.5 border border-gray-100">{ordem.obs}</p>
+            </div>
+          )}
+          {ordem.pausas.length > 0 && (
+            <div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1.5">Pausas ({ordem.pausas.length})</p>
+              <div className="space-y-1.5">
+                {ordem.pausas.map((p, i) => (
+                  <div key={i} className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-xs">
+                    <p className="font-semibold text-amber-800">{p.motivo}</p>
+                    <p className="text-amber-600 mt-0.5">{fmtDate(p.inicio)}{p.fim ? ` → ${fmtDate(p.fim)}` : ' (em pausa)'}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        {onCancelar && ordem.status === 'pendente' && (
+          <div className="px-5 py-3 border-t border-gray-100">
+            <button
+              onClick={handleCancelar}
+              disabled={cancelling}
+              className="w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors"
+            >
+              {cancelling ? 'Cancelando...' : 'Cancelar Ordem'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function OrdemCard({ ordem, tick, onCancelar, onSelect }: { ordem: OrdemProducao; tick: number; onCancelar?: (id: string) => void; onSelect?: (ordem: OrdemProducao) => void }) {
   void tick
   const ms = netElapsedMs(ordem)
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+    <button
+      onClick={() => onSelect?.(ordem)}
+      className="w-full bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3 text-left hover:border-blue-200 hover:shadow-md transition-all active:scale-[0.99]"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-gray-900 truncate">{ordem.produtoNome}</p>
@@ -89,13 +210,23 @@ function OrdemCard({ ordem, tick }: { ordem: OrdemProducao; tick: number }) {
       {ordem.obs && (
         <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-100">{ordem.obs}</p>
       )}
-    </div>
+      {onCancelar && ordem.status === 'pendente' && (
+        <div className="pt-1 border-t border-gray-100">
+          <button
+            onClick={e => { e.stopPropagation(); onCancelar(ordem.id) }}
+            className="w-full text-xs font-semibold text-red-600 hover:text-red-700 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            Cancelar ordem
+          </button>
+        </div>
+      )}
+    </button>
   )
 }
 
 function StatusGroup({
-  title, ordens, tick, color, defaultOpen,
-}: { title: string; ordens: OrdemProducao[]; tick: number; color: string; defaultOpen: boolean }) {
+  title, ordens, tick, color, defaultOpen, onCancelar, onSelect,
+}: { title: string; ordens: OrdemProducao[]; tick: number; color: string; defaultOpen: boolean; onCancelar?: (id: string) => void; onSelect?: (ordem: OrdemProducao) => void }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
     <div className="mb-3">
@@ -116,7 +247,7 @@ function StatusGroup({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-2">
           {ordens.length === 0
             ? <p className="text-sm text-gray-400 px-2 col-span-2">Nenhuma ordem.</p>
-            : ordens.map(o => <OrdemCard key={o.id} ordem={o} tick={tick} />)
+            : ordens.map(o => <OrdemCard key={o.id} ordem={o} tick={tick} onCancelar={onCancelar} onSelect={onSelect} />)
           }
         </div>
       )}
@@ -124,22 +255,23 @@ function StatusGroup({
   )
 }
 
-function SetorView({ ordens, tick }: { ordens: OrdemProducao[]; tick: number }) {
+function SetorView({ ordens, tick, onCancelar, onSelect }: { ordens: OrdemProducao[]; tick: number; onCancelar?: (id: string) => void; onSelect?: (ordem: OrdemProducao) => void }) {
   const pendentes   = ordens.filter(o => o.status === 'pendente')
   const andamento   = ordens.filter(o => o.status === 'em_producao' || o.status === 'pausada')
-  const concluidas  = ordens.filter(o => o.status === 'concluida')
+  const concluidas  = ordens.filter(o => o.status === 'concluida' || o.status === 'cancelada')
   return (
     <div className="space-y-1">
-      <StatusGroup title="Pendentes"    ordens={pendentes}  tick={tick} color="bg-orange-500" defaultOpen={true} />
-      <StatusGroup title="Em andamento" ordens={andamento}  tick={tick} color="bg-blue-500"   defaultOpen={true} />
-      <StatusGroup title="Concluídas"   ordens={concluidas} tick={tick} color="bg-green-500"  defaultOpen={false} />
+      <StatusGroup title="Pendentes"    ordens={pendentes}  tick={tick} color="bg-orange-500" defaultOpen={true}  onCancelar={onCancelar} onSelect={onSelect} />
+      <StatusGroup title="Em andamento" ordens={andamento}  tick={tick} color="bg-blue-500"   defaultOpen={true}  onSelect={onSelect} />
+      <StatusGroup title="Concluídas"   ordens={concluidas} tick={tick} color="bg-green-500"  defaultOpen={false} onSelect={onSelect} />
     </div>
   )
 }
 
-export default function Producao({ ordens }: Props) {
-  const [setor, setSetor] = useState<Setor>('chaparia')
-  const [tick, setTick]   = useState(0)
+export default function Producao({ ordens, cancelarOrdem }: Props) {
+  const [setor, setSetor]           = useState<Setor>('chaparia')
+  const [tick, setTick]             = useState(0)
+  const [selectedOrdem, setSelectedOrdem] = useState<OrdemProducao | null>(null)
 
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 1000)
@@ -148,6 +280,7 @@ export default function Producao({ ordens }: Props) {
 
   const chaparia     = ordens.filter(o => o.usuarioDestino === 'CHAPARIA')
   const almoxarifado = ordens.filter(o => o.usuarioDestino === 'ALMOXARIFADO')
+  const montagem     = ordens.filter(o => o.usuarioDestino === 'MONTAGEM')
 
   const pendentes   = ordens.filter(o => o.status === 'pendente').length
   const emAndamento = ordens.filter(o => o.status === 'em_producao' || o.status === 'pausada').length
@@ -198,15 +331,36 @@ export default function Producao({ ordens }: Props) {
             Almoxarifado
             <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{almoxarifado.length}</span>
           </button>
+          <button
+            onClick={() => setSetor('montagem')}
+            className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-bold border-b-2 transition-all ${
+              setor === 'montagem'
+                ? 'text-teal-700 border-teal-600 bg-teal-50'
+                : 'text-gray-500 border-transparent hover:bg-gray-50'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+            Montagem
+            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{montagem.length}</span>
+          </button>
         </div>
 
         <div className="p-4">
           {setor === 'chaparia'
-            ? <SetorView ordens={chaparia} tick={tick} />
-            : <SetorView ordens={almoxarifado} tick={tick} />
+            ? <SetorView ordens={chaparia} tick={tick} onCancelar={cancelarOrdem} onSelect={setSelectedOrdem} />
+            : setor === 'almoxarifado'
+            ? <SetorView ordens={almoxarifado} tick={tick} onCancelar={cancelarOrdem} onSelect={setSelectedOrdem} />
+            : <SetorView ordens={montagem} tick={tick} onCancelar={cancelarOrdem} onSelect={setSelectedOrdem} />
           }
         </div>
       </div>
+      {selectedOrdem && (
+        <OrdemDetailPanel
+          ordem={selectedOrdem}
+          onClose={() => setSelectedOrdem(null)}
+          onCancelar={cancelarOrdem}
+        />
+      )}
     </div>
   )
 }

@@ -9,7 +9,7 @@ export interface Produto {
   codigoBarras?: string
 }
 
-export type UserRole = 'admin' | 'user' | 'chaparia' | 'almoxarifado'
+export type UserRole = 'admin' | 'user' | 'chaparia' | 'almoxarifado' | 'expedicao' | 'montagem'
 
 export interface Usuario {
   id: string
@@ -39,18 +39,19 @@ export interface PausaOrdem {
 
 export interface OrdemProducao {
   id: string
-  tipo: 'chaparia' | 'almoxarifado'
-  status: 'pendente' | 'em_producao' | 'pausada' | 'concluida'
+  tipo: 'chaparia' | 'almoxarifado' | 'montagem'
+  status: 'pendente' | 'em_producao' | 'pausada' | 'concluida' | 'cancelada'
   produtoId: string
   produtoNome: string
   quantidade: number
   petgQuantidade?: number
+  linha?: string
   obs: string
   criadoPor: string
   criadoEm: string
   iniciadoEm?: string
   concluidoEm?: string
-  usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO'
+  usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO' | 'MONTAGEM'
   pausas: PausaOrdem[]
 }
 

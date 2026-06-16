@@ -5,16 +5,13 @@ import type { Usuario } from '@/lib/types'
 
 interface HeaderProps {
   user: Usuario | null
-  onEntrada: () => void
-  onSaida: () => void
-  onScan: () => void
   onGerenciarUsuarios: () => void
   onSolicitarOP: () => void
   onLogout: () => void
   onHome?: () => void
 }
 
-export default function Header({ user, onEntrada, onSaida, onScan, onGerenciarUsuarios, onSolicitarOP, onLogout, onHome }: HeaderProps) {
+export default function Header({ user, onGerenciarUsuarios, onSolicitarOP, onLogout, onHome }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -47,63 +44,19 @@ export default function Header({ user, onEntrada, onSaida, onScan, onGerenciarUs
             alt="Ultralight"
             width={40}
             height={40}
-            className="object-contain flex-shrink-0 w-10 h-10"
+            className="bg-white rounded-xl object-contain flex-shrink-0 w-10 h-10 p-0.5"
           />
           <div className="min-w-0">
             <span className="block text-lg sm:text-[1.35rem] font-extrabold text-[#0f2d5e] leading-none tracking-tight">
               ULTRALIGHT
             </span>
             <span className="block text-[0.62rem] sm:text-[0.68rem] text-gray-400 uppercase tracking-[0.18em] mt-0.5">
-              Gestão de Estoque
+              GE
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2.5">
-          <button
-            onClick={onScan}
-            title="Picking — escanear código de barras"
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-[#0f2d5e] hover:bg-[#0c2349] active:bg-[#0a1d3d] text-white text-sm font-semibold rounded-xl transition-all active:scale-95"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path strokeLinecap="round" d="M6 5v14M10 5v14M14 5v14M18 5v14"/>
-            </svg>
-            <span className="hidden sm:inline">Picking</span>
-          </button>
-
-          {user?.role === 'admin' && (
-            <button
-              onClick={onSolicitarOP}
-              title="Solicitar Ordem de Produção"
-              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl transition-all active:scale-95"
-            >
-              <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
-              </svg>
-              <span className="hidden sm:inline">Solicitar OP</span>
-            </button>
-          )}
-
-          <button
-            onClick={onEntrada}
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-xl transition-all active:scale-95"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
-            <span className="hidden sm:inline">Entrada</span>
-          </button>
-
-          <button
-            onClick={onSaida}
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-semibold rounded-xl transition-all active:scale-95"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-            </svg>
-            <span className="hidden sm:inline">Saída</span>
-          </button>
-
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(v => !v)}
