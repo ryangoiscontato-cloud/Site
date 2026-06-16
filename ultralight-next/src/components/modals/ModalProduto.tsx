@@ -1,14 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
+import { useState, useEffect, useRef } from 'react'
 import type { Produto } from '@/lib/types'
-
-const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 
 interface Props {
   open: boolean
-  produto: Produto | null   // null = novo produto
+  produto: Produto | null
   codigosExistentes: string[]
   onClose: () => void
   onSalvar: (dados: Omit<Produto, 'id'>, editId?: string) => void
@@ -17,17 +14,19 @@ interface Props {
 const UNIDADES = ['un', 'kg', 'g', 'l', 'ml', 'm', 'm²', 'cx', 'pct', 'par']
 
 export default function ModalProduto({ open, produto, codigosExistentes, onClose, onSalvar }: Props) {
-  const [codigo,     setCodigo]     = useState('')
-  const [nome,       setNome]       = useState('')
-  const [categoria,  setCategoria]  = useState('')
-  const [unidade,    setUnidade]    = useState('un')
-  const [estoqueMin, setEstoqueMin] = useState('0')
-  const [saldoIni,   setSaldoIni]   = useState('0')
+  const [codigo,       setCodigo]       = useState('')
+  const [nome,         setNome]         = useState('')
+  const [categoria,    setCategoria]    = useState('')
+  const [unidade,      setUnidade]      = useState('un')
+  const [estoqueMin,   setEstoqueMin]   = useState('0')
+  const [saldoIni,     setSaldoIni]     = useState('0')
   const [codigoBarras, setCodigoBarras] = useState('')
-  const [scanning,   setScanning]   = useState(false)
-  const [errors,     setErrors]     = useState<Record<string, string>>({})
+  const [errors,       setErrors]       = useState<Record<string, string>>({})
+  const codigoBarrasRef = useRef(codigoBarras)
 
   const isEdit = !!produto
+
+  useEffect(() => { codigoBarrasRef.current = codigoBarras }, [codigoBarras])
 
   useEffect(() => {
     if (!open) return
@@ -48,6 +47,25 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose])
 
+  // HID barcode scanner: detects fast keystroke sequences (< 80ms gap) as scanner input
+  useEffect(() => {
+    if (!open) return
+    let buf = ''
+    let lastTime = 0
+    function onKey(e: KeyboardEvent) {
+      const now = Date.now()
+      if (e.key === 'Enter') {
+        if (buf.length >= 3) setCodigoBarras(buf.trim())
+        buf = ''; lastTime = 0; return
+      }
+      if (e.key.length !== 1) return
+      if (lastTime > 0 && now - lastTime > 80) buf = ''
+      buf += e.key; lastTime = now
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+
   function handleSalvar() {
     const errs: Record<string, string> = {}
     if (!codigo.trim()) errs.codigo = 'Código obrigatório'
@@ -67,7 +85,6 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
   return (
     <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box-scroll animate-slide-up">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 bg-blue-50 border-b border-blue-100 rounded-t-2xl sticky top-0 z-10">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -83,7 +100,6 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
           <button onClick={onClose} className="modal-close-btn">&times;</button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -108,28 +124,22 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
           </div>
 
           <div>
-            <label className="field-label">Código de Barras <span className="text-gray-400 font-normal">(opcional)</span></label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={codigoBarras}
-                onChange={e => setCodigoBarras(e.target.value)}
-                placeholder="Escaneie ou digite o código"
-                className="form-field flex-1"
-                inputMode="numeric"
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                onClick={() => setScanning(true)}
-                title="Escanear código de barras"
-                className="flex-shrink-0 w-11 flex items-center justify-center rounded-lg bg-blue-700 hover:bg-blue-800 text-white transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" d="M6 5v14M10 5v14M14 5v14M18 5v14"/>
-                </svg>
-              </button>
+            <div className="flex items-center justify-between mb-1">
+              <label className="field-label mb-0">Código de Barras <span className="text-gray-400 font-normal">(opcional)</span></label>
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
+                Scanner ativo
+              </span>
             </div>
+            <input
+              type="text"
+              value={codigoBarras}
+              onChange={e => setCodigoBarras(e.target.value)}
+              placeholder="Escaneie ou digite o código"
+              className="form-field"
+              inputMode="numeric"
+              autoComplete="off"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -153,7 +163,6 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2.5">
           <button onClick={onClose} className="btn-cancel">Cancelar</button>
           <button onClick={handleSalvar} className="inline-flex items-center gap-2 px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors">
@@ -164,13 +173,6 @@ export default function ModalProduto({ open, produto, codigosExistentes, onClose
           </button>
         </div>
       </div>
-
-      {scanning && (
-        <BarcodeScanner
-          onScan={code => { setCodigoBarras(code); setScanning(false) }}
-          onClose={() => setScanning(false)}
-        />
-      )}
     </div>
   )
 }

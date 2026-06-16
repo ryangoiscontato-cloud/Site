@@ -1,64 +1,90 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { Usuario } from '@/lib/types'
+import type { Usuario, UserRole } from '@/lib/types'
 
 interface Props {
   open: boolean
   usuarios: Usuario[]
   currentUserId?: string
   onClose: () => void
-  onCriar: (username: string, password: string, role: 'admin' | 'user') => Promise<{ ok: boolean; error?: string }>
+  onCriar: (username: string, password: string, role: UserRole) => Promise<{ ok: boolean; error?: string }>
   onAlterar: (userId: string, novoUsername?: string, novaSenha?: string) => Promise<{ ok: boolean; error?: string }>
+  onExcluir: (userId: string) => Promise<{ ok: boolean; error?: string }>
 }
 
-type Tela = 'lista' | 'criar' | 'editar' | 'minha-senha'
+type Tela = 'lista' | 'criar' | 'editar' | 'minha-senha' | 'confirmar-excluir'
 
-export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClose, onCriar, onAlterar }: Props) {
+const ROLES: { value: UserRole; label: string }[] = [
+  { value: 'user',         label: 'Funcionário' },
+  { value: 'chaparia',     label: 'Chaparia' },
+  { value: 'almoxarifado', label: 'Almoxarifado' },
+  { value: 'montagem',     label: 'Montagem' },
+  { value: 'expedicao',    label: 'Expedição' },
+  { value: 'admin',        label: 'Administrador' },
+]
+
+function roleLabel(r: string) {
+  return ROLES.find(x => x.value === r)?.label ?? 'Funcionário'
+}
+
+function roleBadge(r: string) {
+  if (r === 'admin')        return 'bg-blue-100 text-blue-700'
+  if (r === 'chaparia')     return 'bg-orange-100 text-orange-700'
+  if (r === 'almoxarifado') return 'bg-purple-100 text-purple-700'
+  if (r === 'montagem')     return 'bg-teal-100 text-teal-700'
+  if (r === 'expedicao')    return 'bg-green-100 text-green-700'
+  return 'bg-gray-100 text-gray-600'
+}
+
+export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClose, onCriar, onAlterar, onExcluir }: Props) {
   const [tela, setTela] = useState<Tela>('lista')
   const [editando, setEditando] = useState<Usuario | null>(null)
+  const [excluindo, setExcluindo] = useState<Usuario | null>(null)
   const [error, setError] = useState('')
   const [ok, setOk] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Criar
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [role, setRole] = useState<'admin' | 'user'>('user')
+  const [role, setRole] = useState<UserRole>('user')
 
-  // Editar
   const [editUsername, setEditUsername] = useState('')
   const [editSenha, setEditSenha] = useState('')
   const [editConfirm, setEditConfirm] = useState('')
 
-  // Minha senha
   const [minhaSenha, setMinhaSenha] = useState('')
   const [minhaConfirm, setMinhaConfirm] = useState('')
 
-  useEffect(() => {
-    if (open) reset()
-  }, [open])
+  useEffect(() => { if (open) reset() }, [open])
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (tela !== 'lista') goLista(); else onClose() } }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { if (tela !== 'lista') goLista(); else onClose() }
+    }
     if (open) window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [open, tela, onClose])
 
   function reset() {
-    setTela('lista'); setEditando(null); setError(''); setOk('')
+    setTela('lista'); setEditando(null); setExcluindo(null); setError(''); setOk('')
     setUsername(''); setPassword(''); setConfirm(''); setRole('user')
     setEditUsername(''); setEditSenha(''); setEditConfirm('')
     setMinhaSenha(''); setMinhaConfirm('')
   }
 
-  function goLista() { setTela('lista'); setError(''); setOk(''); setEditando(null) }
+  function goLista() { setTela('lista'); setError(''); setOk(''); setEditando(null); setExcluindo(null) }
 
   function startEditar(u: Usuario) {
     setEditando(u); setEditUsername(u.username)
     setEditSenha(''); setEditConfirm(''); setError(''); setOk('')
     setTela('editar')
+  }
+
+  function startExcluir(u: Usuario) {
+    setExcluindo(u); setError(''); setOk('')
+    setTela('confirmar-excluir')
   }
 
   async function handleCriar() {
@@ -89,6 +115,15 @@ export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClos
     setEditSenha(''); setEditConfirm('')
   }
 
+  async function handleExcluir() {
+    if (!excluindo) return
+    setLoading(true)
+    const res = await onExcluir(excluindo.id)
+    setLoading(false)
+    if (!res.ok) { setError(res.error || 'Erro ao excluir usuário.'); return }
+    goLista()
+  }
+
   async function handleMinhaSenha() {
     if (!currentUserId) return
     setError(''); setOk('')
@@ -100,13 +135,6 @@ export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClos
     if (!res.ok) { setError(res.error || 'Erro ao alterar senha.'); return }
     setOk('Senha alterada com sucesso!')
     setMinhaSenha(''); setMinhaConfirm('')
-  }
-
-  function roleLabel(r: string) {
-    if (r === 'admin') return 'Admin'
-    if (r === 'chaparia') return 'Chaparia'
-    if (r === 'almoxarifado') return 'Almoxarifado'
-    return 'Funcionário'
   }
 
   if (!open) return null
@@ -130,15 +158,17 @@ export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClos
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900">
-                {tela === 'lista' ? 'Gerenciar Usuários' :
-                 tela === 'criar' ? 'Novo Usuário' :
-                 tela === 'editar' ? `Editar: ${editando?.username}` :
+                {tela === 'lista'             ? 'Gerenciar Usuários' :
+                 tela === 'criar'             ? 'Novo Usuário' :
+                 tela === 'editar'            ? `Editar: ${editando?.username}` :
+                 tela === 'confirmar-excluir' ? 'Excluir Usuário' :
                  'Minha Senha'}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                {tela === 'lista' ? 'Crie e gerencie usuários' :
-                 tela === 'criar' ? 'Preencha os dados do novo usuário' :
-                 tela === 'editar' ? 'Altere usuário ou senha' :
+                {tela === 'lista'             ? 'Crie e gerencie usuários' :
+                 tela === 'criar'             ? 'Preencha os dados do novo usuário' :
+                 tela === 'editar'            ? 'Altere usuário ou senha' :
+                 tela === 'confirmar-excluir' ? 'Confirme a exclusão' :
                  'Altere sua senha de acesso'}
               </p>
             </div>
@@ -178,20 +208,29 @@ export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClos
                     <div key={u.id} className="flex items-center justify-between px-4 py-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span className="font-semibold text-gray-800 text-sm truncate">{u.username}</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                          u.role === 'admin' ? 'bg-blue-100 text-blue-700' :
-                          u.role === 'chaparia' ? 'bg-orange-100 text-orange-700' :
-                          u.role === 'almoxarifado' ? 'bg-purple-100 text-purple-700' :
-                          'bg-gray-100 text-gray-600'}`}>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${roleBadge(u.role)}`}>
                           {roleLabel(u.role)}
                         </span>
                       </div>
-                      <button
-                        onClick={() => startEditar(u)}
-                        className="text-xs text-blue-700 font-semibold px-2.5 py-1 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors flex-shrink-0 ml-2"
-                      >
-                        Editar
-                      </button>
+                      <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                        <button
+                          onClick={() => startEditar(u)}
+                          className="text-xs text-blue-700 font-semibold px-2.5 py-1 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
+                        >
+                          Editar
+                        </button>
+                        {u.id !== currentUserId && (
+                          <button
+                            onClick={() => startExcluir(u)}
+                            className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                            title="Excluir usuário"
+                          >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -220,9 +259,8 @@ export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClos
               </div>
               <div>
                 <label className="field-label">Permissão</label>
-                <select value={role} onChange={e => setRole(e.target.value as 'admin' | 'user')} className="form-field">
-                  <option value="user">Funcionário</option>
-                  <option value="admin">Administrador</option>
+                <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="form-field">
+                  {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
             </>
@@ -251,27 +289,38 @@ export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClos
             </>
           )}
 
+          {/* CONFIRMAR EXCLUIR */}
+          {tela === 'confirmar-excluir' && excluindo && (
+            <div className="text-center py-4 space-y-4">
+              <div className="w-14 h-14 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-7 h-7 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                </svg>
+              </div>
+              <p className="text-gray-700 text-sm">
+                Tem certeza que deseja excluir o usuário <span className="font-bold text-gray-900">{excluindo.username}</span>?<br/>
+                Esta ação não pode ser desfeita.
+              </p>
+            </div>
+          )}
+
           {/* MINHA SENHA */}
           {tela === 'minha-senha' && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="field-label">Nova senha *</label>
-                  <input type="password" value={minhaSenha} onChange={e => setMinhaSenha(e.target.value)} placeholder="Nova senha" className="form-field" />
-                </div>
-                <div>
-                  <label className="field-label">Confirmar *</label>
-                  <input type="password" value={minhaConfirm} onChange={e => setMinhaConfirm(e.target.value)} placeholder="Repita" className="form-field" />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="field-label">Nova senha *</label>
+                <input type="password" value={minhaSenha} onChange={e => setMinhaSenha(e.target.value)} placeholder="Nova senha" className="form-field" />
               </div>
-            </>
+              <div>
+                <label className="field-label">Confirmar *</label>
+                <input type="password" value={minhaConfirm} onChange={e => setMinhaConfirm(e.target.value)} placeholder="Repita" className="form-field" />
+              </div>
+            </div>
           )}
         </div>
 
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2.5 sticky bottom-0 bg-white">
-          {tela === 'lista' && (
-            <button onClick={onClose} className="btn-cancel">Fechar</button>
-          )}
+          {tela === 'lista' && <button onClick={onClose} className="btn-cancel">Fechar</button>}
           {tela === 'criar' && (
             <>
               <button onClick={goLista} className="btn-cancel">Cancelar</button>
@@ -287,6 +336,15 @@ export default function ModalNovoUsuario({ open, usuarios, currentUserId, onClos
               <button onClick={handleEditar} disabled={loading}
                 className="inline-flex items-center gap-2 px-5 py-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
                 {loading ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </>
+          )}
+          {tela === 'confirmar-excluir' && (
+            <>
+              <button onClick={goLista} className="btn-cancel">Cancelar</button>
+              <button onClick={handleExcluir} disabled={loading}
+                className="inline-flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
+                {loading ? 'Excluindo...' : 'Excluir'}
               </button>
             </>
           )}

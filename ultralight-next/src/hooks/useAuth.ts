@@ -17,6 +17,8 @@ function mapRole(role: string): UserRole {
   if (role === 'admin') return 'admin'
   if (role === 'chaparia') return 'chaparia'
   if (role === 'almoxarifado') return 'almoxarifado'
+  if (role === 'montagem') return 'montagem'
+  if (role === 'expedicao') return 'expedicao'
   return 'user'
 }
 
@@ -77,7 +79,7 @@ export function useAuth() {
   const criarUsuario = useCallback(async (
     username: string,
     password: string,
-    role: 'admin' | 'user' = 'user',
+    role: UserRole = 'user',
   ): Promise<{ ok: boolean; error?: string }> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
 
@@ -124,5 +126,13 @@ export function useAuth() {
     return { ok: true }
   }, [carregarUsuarios])
 
-  return { user, loading, login, logout, criarUsuario, alterarUsuario, usuarios }
+  const excluirUsuario = useCallback(async (userId: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
+    const { error } = await supabase.from('usuarios').delete().eq('id', userId)
+    if (error) return { ok: false, error: 'Erro ao excluir usuário.' }
+    await carregarUsuarios()
+    return { ok: true }
+  }, [carregarUsuarios])
+
+  return { user, loading, login, logout, criarUsuario, alterarUsuario, excluirUsuario, usuarios }
 }

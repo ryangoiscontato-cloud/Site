@@ -28,7 +28,7 @@ import ModalNovoUsuario from './modals/ModalNovoUsuario'
 import ModalSolicitarOP from './modals/ModalSolicitarOP'
 
 export default function InventoryApp() {
-  const { user, loading: authLoading, login, logout, criarUsuario, alterarUsuario, usuarios } = useAuth()
+  const { user, loading: authLoading, login, logout, criarUsuario, alterarUsuario, excluirUsuario, usuarios } = useAuth()
   const {
     produtos, historico, hydrated, error, isOnline, pendingSync,
     registrarEntrada, registrarSaida, adicionarProduto, atualizarProduto, excluirProduto,
@@ -123,7 +123,7 @@ export default function InventoryApp() {
 
   if (!user) return <LoginScreen onLogin={login} />
 
-  if (user.role === 'chaparia' || user.role === 'almoxarifado' || user.role === 'montagem') {
+  if (user.role === 'chaparia' || user.role === 'almoxarifado' || user.role === 'montagem' || user.role === 'user') {
     return (
       <WorkerApp
         user={user} logout={logout}
@@ -266,6 +266,7 @@ export default function InventoryApp() {
           onClose={() => setModalUsuario(false)}
           onCriar={criarUsuario}
           onAlterar={alterarUsuario}
+          onExcluir={excluirUsuario}
         />
         {user && (
           <ModalSolicitarOP
@@ -389,6 +390,7 @@ export default function InventoryApp() {
         onClose={() => setModalUsuario(false)}
         onCriar={criarUsuario}
         onAlterar={alterarUsuario}
+        onExcluir={excluirUsuario}
       />
       {user && (
         <ModalSolicitarOP
