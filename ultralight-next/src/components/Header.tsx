@@ -11,9 +11,10 @@ interface HeaderProps {
   onGerenciarUsuarios: () => void
   onSolicitarOP: () => void
   onLogout: () => void
+  onHome?: () => void
 }
 
-export default function Header({ user, onEntrada, onSaida, onScan, onGerenciarUsuarios, onSolicitarOP, onLogout }: HeaderProps) {
+export default function Header({ user, onEntrada, onSaida, onScan, onGerenciarUsuarios, onSolicitarOP, onLogout, onHome }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -35,7 +36,11 @@ export default function Header({ user, onEntrada, onSaida, onScan, onGerenciarUs
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
+        <div
+          className={`flex items-center gap-3 min-w-0 ${onHome ? 'cursor-pointer select-none' : ''}`}
+          onClick={onHome}
+          title={onHome ? 'Voltar ao inicio' : undefined}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo.png"

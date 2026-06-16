@@ -11,7 +11,8 @@ interface Props {
 
 function StatusBadge({ status }: { status: OrdemProducao['status'] }) {
   if (status === 'pendente')    return <span className="badge-orange">Pendente</span>
-  if (status === 'em_producao') return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"><span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block flex-shrink-0" />Em produção</span>
+  if (status === 'em_producao') return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"><span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block flex-shrink-0" />Em andamento</span>
+  if (status === 'pausada')     return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block flex-shrink-0" />Pausada</span>
   return <span className="badge-green">Concluída</span>
 }
 

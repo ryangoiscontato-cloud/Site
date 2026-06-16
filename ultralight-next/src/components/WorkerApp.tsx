@@ -9,44 +9,65 @@ interface Props {
   user: Usuario
   logout: () => void
   ordens: OrdemProducao[]
-  iniciarOrdem: (id: string) => Promise<{ ok: boolean; error?: string }>
+  iniciarOrdem:  (id: string) => Promise<{ ok: boolean; error?: string }>
   concluirOrdem: (id: string) => Promise<{ ok: boolean; error?: string }>
+  pausarOrdem:   (id: string, motivo: string) => Promise<{ ok: boolean; error?: string }>
+  retomarOrdem:  (id: string) => Promise<{ ok: boolean; error?: string }>
 }
 
 type Screen = 'menu' | 'ordens' | 'historico'
 
-export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluirOrdem }: Props) {
+export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem }: Props) {
   const [screen, setScreen]         = useState<Screen>('menu')
-  const [selected, setSelected]     = useState<OrdemProducao | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const dest = user.username.toUpperCase()
-  const minhas = ordens.filter(o => o.usuarioDestino === dest)
+  const isAlmox  = user.role === 'almoxarifado'
+  const dest     = user.username.toUpperCase()
+  const minhas   = ordens.filter(o => o.usuarioDestino === dest)
+  const selected = selectedId ? ordens.find(o => o.id === selectedId) ?? null : null
   const pendentes = minhas.filter(o => o.status !== 'concluida').length
+
+  const ordensLabel    = isAlmox ? 'Ordens de Separacao' : 'Ordens de Producao'
+  const historicoLabel = isAlmox ? 'Historico de Separacao' : 'Historico de Producao'
+
+  const WorkerHeader = () => (
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+      <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-cover w-9 h-9" />
+          <span className="font-extrabold text-[#0f2d5e] text-lg tracking-tight">ULTRALIGHT</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {screen !== 'menu' && !selected && (
+            <button
+              onClick={() => setScreen('menu')}
+              className="text-xs text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
+            >
+              Menu
+            </button>
+          )}
+          <span className="text-sm font-semibold text-gray-700">{user.username}</span>
+          <button onClick={logout} className="text-xs text-red-600 font-semibold px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">
+            Sair
+          </button>
+        </div>
+      </div>
+    </header>
+  )
 
   if (selected) {
     return (
       <div className="min-h-screen bg-gray-100">
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-          <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-cover w-9 h-9" />
-              <span className="font-extrabold text-[#0f2d5e] text-lg tracking-tight">ULTRALIGHT</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">{user.username}</span>
-              <button onClick={logout} className="text-xs text-red-600 font-semibold px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">
-                Sair
-              </button>
-            </div>
-          </div>
-        </header>
+        <WorkerHeader />
         <main className="max-w-2xl mx-auto px-4 py-6">
           <OrdemDetail
             ordem={selected}
-            onBack={() => setSelected(null)}
+            onBack={() => setSelectedId(null)}
             onIniciar={iniciarOrdem}
             onConcluir={concluirOrdem}
+            onPausar={pausarOrdem}
+            onRetomar={retomarOrdem}
           />
         </main>
       </div>
@@ -55,21 +76,7 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-cover w-9 h-9" />
-            <span className="font-extrabold text-[#0f2d5e] text-lg tracking-tight">ULTRALIGHT</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-700">{user.username}</span>
-            <button onClick={logout} className="text-xs text-red-600 font-semibold px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">
-              Sair
-            </button>
-          </div>
-        </div>
-      </header>
+      <WorkerHeader />
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         {screen === 'menu' && (
@@ -89,18 +96,18 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
                     {pendentes}
                   </span>
                 )}
-                <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
-                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
-                    <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${isAlmox ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Ordens de Produção</h2>
+                <h2 className="text-xl font-bold text-gray-900">{ordensLabel}</h2>
                 <p className="text-sm text-gray-500 mt-1">Ver e gerenciar ordens pendentes</p>
               </button>
 
               <button
                 onClick={() => setScreen('historico')}
-                className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left active:scale-[0.98]"
+                className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-green-200 transition-all text-left active:scale-[0.98]"
               >
                 <div className="w-14 h-14 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center mb-4">
                   <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -108,8 +115,8 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Histórico de Produção</h2>
-                <p className="text-sm text-gray-500 mt-1">Ver ordens concluídas anteriormente</p>
+                <h2 className="text-xl font-bold text-gray-900">{historicoLabel}</h2>
+                <p className="text-sm text-gray-500 mt-1">Ver ordens concluidas anteriormente</p>
               </button>
             </div>
           </div>
@@ -123,12 +130,12 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
                 </svg>
               </button>
-              <h1 className="text-xl font-bold text-gray-900">Ordens de Produção</h1>
+              <h1 className="text-xl font-bold text-gray-900">{ordensLabel}</h1>
             </div>
             <OrdensList
               ordens={minhas.filter(o => o.status !== 'concluida')}
               user={user}
-              onSelect={setSelected}
+              onSelect={o => setSelectedId(o.id)}
             />
           </div>
         )}
@@ -141,12 +148,12 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
                 </svg>
               </button>
-              <h1 className="text-xl font-bold text-gray-900">Histórico de Produção</h1>
+              <h1 className="text-xl font-bold text-gray-900">{historicoLabel}</h1>
             </div>
             <OrdensList
               ordens={minhas.filter(o => o.status === 'concluida')}
               user={user}
-              onSelect={setSelected}
+              onSelect={o => setSelectedId(o.id)}
             />
           </div>
         )}

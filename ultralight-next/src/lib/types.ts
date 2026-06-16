@@ -31,10 +31,16 @@ export interface Movimento {
   usuarioNome?: string
 }
 
+export interface PausaOrdem {
+  motivo: string
+  inicio: string
+  fim?: string
+}
+
 export interface OrdemProducao {
   id: string
   tipo: 'chaparia' | 'almoxarifado'
-  status: 'pendente' | 'em_producao' | 'concluida'
+  status: 'pendente' | 'em_producao' | 'pausada' | 'concluida'
   produtoId: string
   produtoNome: string
   quantidade: number
@@ -45,6 +51,7 @@ export interface OrdemProducao {
   iniciadoEm?: string
   concluidoEm?: string
   usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO'
+  pausas: PausaOrdem[]
 }
 
 export type TabId = 'dashboard' | 'saldo' | 'produtos' | 'historico' | 'producao'

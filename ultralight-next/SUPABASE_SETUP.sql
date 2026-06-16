@@ -101,3 +101,7 @@ on conflict (username) do nothing;
 insert into usuarios (username, senha_hash, role)
 values ('ALMOXARIFADO', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'almoxarifado')
 on conflict (username) do nothing;
+
+-- 7. Coluna pausas em ordens_producao (para pausas com motivo) -----------------
+-- Execute este bloco se a tabela ja existe sem a coluna pausas.
+alter table ordens_producao add column if not exists pausas jsonb default '[]'::jsonb not null;

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { OrdemProducao } from '@/lib/types'
+import type { OrdemProducao, PausaOrdem } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 import { uid } from '@/lib/utils'
 
@@ -19,6 +19,7 @@ interface OrdemRow {
   iniciado_em: string | null
   concluido_em: string | null
   usuario_destino: string
+  pausas: PausaOrdem[] | null
 }
 
 function mapOrdem(r: OrdemRow): OrdemProducao {
@@ -36,39 +37,39 @@ function mapOrdem(r: OrdemRow): OrdemProducao {
     iniciadoEm: r.iniciado_em ?? undefined,
     concluidoEm: r.concluido_em ?? undefined,
     usuarioDestino: r.usuario_destino as OrdemProducao['usuarioDestino'],
+    pausas: r.pausas ?? [],
   }
 }
 
 export function useOrdens() {
-  const [ordens, setOrdens]     = useState<OrdemProducao[]>([])
+  const [ordens, setOrdens] = useState<OrdemProducao[]>([])
   const [hydrated, setHydrated] = useState(false)
+
+  const fetchAll = useCallback(async () => {
+    if (!supabase) return
+    const { data } = await supabase
+      .from('ordens_producao')
+      .select('*')
+      .order('criado_em', { ascending: false })
+    if (data) setOrdens((data as OrdemRow[]).map(mapOrdem))
+  }, [])
 
   useEffect(() => {
     if (!supabase) { setHydrated(true); return }
 
     let active = true
 
-    async function fetchAll() {
-      const { data } = await supabase!
-        .from('ordens_producao')
-        .select('*')
-        .order('criado_em', { ascending: false })
-      if (active && data) setOrdens((data as OrdemRow[]).map(mapOrdem))
+    async function init() {
+      await fetchAll()
       if (active) setHydrated(true)
     }
 
-    fetchAll()
+    init()
 
     const channel = supabase
       .channel('ordens-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ordens_producao' }, () => {
-        supabase!
-          .from('ordens_producao')
-          .select('*')
-          .order('criado_em', { ascending: false })
-          .then(({ data }) => {
-            if (active && data) setOrdens((data as OrdemRow[]).map(mapOrdem))
-          })
+        if (active) fetchAll()
       })
       .subscribe()
 
@@ -76,7 +77,7 @@ export function useOrdens() {
       active = false
       supabase!.removeChannel(channel)
     }
-  }, [])
+  }, [fetchAll])
 
   const criarOrdem = useCallback(async (dados: {
     tipo: 'chaparia' | 'almoxarifado'
@@ -102,11 +103,13 @@ export function useOrdens() {
       criado_por: dados.criadoPor,
       criado_em: new Date().toISOString(),
       usuario_destino: dados.usuarioDestino,
+      pausas: [],
     })
 
     if (error) return { ok: false, error: 'Erro ao criar ordem.' }
+    await fetchAll()
     return { ok: true }
-  }, [])
+  }, [fetchAll])
 
   const iniciarOrdem = useCallback(async (id: string): Promise<{ ok: boolean; error?: string }> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
@@ -117,20 +120,81 @@ export function useOrdens() {
       .eq('id', id)
 
     if (error) return { ok: false, error: 'Erro ao iniciar ordem.' }
+    await fetchAll()
     return { ok: true }
-  }, [])
+  }, [fetchAll])
 
   const concluirOrdem = useCallback(async (id: string): Promise<{ ok: boolean; error?: string }> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
 
+    const { data: row } = await supabase.from('ordens_producao').select('pausas').eq('id', id).single()
+    let pausas: PausaOrdem[] = row?.pausas ?? []
+    if (pausas.length > 0 && !pausas[pausas.length - 1].fim) {
+      pausas = pausas.map((p, i) =>
+        i === pausas.length - 1 ? { ...p, fim: new Date().toISOString() } : p
+      )
+    }
+
     const { error } = await supabase
       .from('ordens_producao')
-      .update({ status: 'concluida', concluido_em: new Date().toISOString() })
+      .update({ status: 'concluida', concluido_em: new Date().toISOString(), pausas })
       .eq('id', id)
 
     if (error) return { ok: false, error: 'Erro ao concluir ordem.' }
+    await fetchAll()
     return { ok: true }
-  }, [])
+  }, [fetchAll])
 
-  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, hydrated }
+  const pausarOrdem = useCallback(async (id: string, motivo: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
+
+    const { data: row, error: fetchErr } = await supabase
+      .from('ordens_producao')
+      .select('pausas')
+      .eq('id', id)
+      .single()
+
+    if (fetchErr) return { ok: false, error: 'Erro ao buscar ordem.' }
+
+    const pausas: PausaOrdem[] = [
+      ...(row?.pausas ?? []),
+      { motivo, inicio: new Date().toISOString() },
+    ]
+
+    const { error } = await supabase
+      .from('ordens_producao')
+      .update({ status: 'pausada', pausas })
+      .eq('id', id)
+
+    if (error) return { ok: false, error: 'Erro ao pausar ordem.' }
+    await fetchAll()
+    return { ok: true }
+  }, [fetchAll])
+
+  const retomarOrdem = useCallback(async (id: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
+
+    const { data: row, error: fetchErr } = await supabase
+      .from('ordens_producao')
+      .select('pausas')
+      .eq('id', id)
+      .single()
+
+    if (fetchErr) return { ok: false, error: 'Erro ao buscar ordem.' }
+
+    const pausas: PausaOrdem[] = (row?.pausas ?? []).map((p: PausaOrdem, i: number, arr: PausaOrdem[]) =>
+      i === arr.length - 1 && !p.fim ? { ...p, fim: new Date().toISOString() } : p
+    )
+
+    const { error } = await supabase
+      .from('ordens_producao')
+      .update({ status: 'em_producao', pausas })
+      .eq('id', id)
+
+    if (error) return { ok: false, error: 'Erro ao retomar ordem.' }
+    await fetchAll()
+    return { ok: true }
+  }, [fetchAll])
+
+  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, hydrated }
 }

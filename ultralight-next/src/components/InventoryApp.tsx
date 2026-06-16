@@ -36,10 +36,11 @@ export default function InventoryApp() {
     produtos, historico, hydrated, error,
     registrarEntrada, registrarSaida, adicionarProduto, atualizarProduto, excluirProduto,
   } = useInventory(user)
-  const { ordens, criarOrdem, iniciarOrdem, concluirOrdem } = useOrdens()
+  const { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem } = useOrdens()
   const { toasts, toast, dismiss } = useToast()
 
-  const [tab, setTab] = useState<TabId>('dashboard')
+  const [tab, setTab]       = useState<TabId>('dashboard')
+  const [showHome, setShowHome] = useState(true)
 
   const [modalEntrada, setModalEntrada] = useState(false)
   const [modalSaida,   setModalSaida]   = useState(false)
@@ -154,7 +155,14 @@ export default function InventoryApp() {
   }
 
   if (user.role === 'chaparia' || user.role === 'almoxarifado') {
-    return <WorkerApp user={user} logout={logout} ordens={ordens} iniciarOrdem={iniciarOrdem} concluirOrdem={concluirOrdem} />
+    return (
+      <WorkerApp
+        user={user} logout={logout}
+        ordens={ordens}
+        iniciarOrdem={iniciarOrdem} concluirOrdem={concluirOrdem}
+        pausarOrdem={pausarOrdem} retomarOrdem={retomarOrdem}
+      />
+    )
   }
 
   if (!hydrated) {
@@ -164,6 +172,84 @@ export default function InventoryApp() {
           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-gray-500">Carregando...</p>
         </div>
+      </div>
+    )
+  }
+
+  function goTo(t: TabId) { setTab(t); setShowHome(false) }
+
+  if (showHome) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+          <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-cover w-9 h-9" />
+              <div>
+                <span className="block font-extrabold text-[#0f2d5e] text-lg tracking-tight leading-none">ULTRALIGHT</span>
+                <span className="block text-[0.6rem] text-gray-400 uppercase tracking-widest mt-0.5">Gestao de Estoque</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">{user.username}</span>
+              <button onClick={logout} className="text-xs text-red-600 font-semibold px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">
+                Sair
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          <div className="text-center mb-10">
+            <p className="text-gray-500 text-sm font-medium uppercase tracking-widest mb-1">Bem-vindo,</p>
+            <h1 className="text-3xl font-extrabold text-[#0f2d5e]">{user.username}</h1>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {([
+              { tab: 'saldo' as TabId, label: 'Saldo em Estoque', sub: 'Ver todos os produtos', color: 'bg-blue-100 text-blue-600', icon: (
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
+              )},
+              { tab: 'produtos' as TabId, label: 'Produtos', sub: 'Gerenciar cadastro', color: 'bg-indigo-100 text-indigo-600', icon: (
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 4v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              )},
+              { tab: 'historico' as TabId, label: 'Historico', sub: 'Movimentacoes', color: 'bg-green-100 text-green-600', icon: (
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              )},
+              { tab: 'producao' as TabId, label: 'Producao', sub: 'Ordens de producao', color: 'bg-orange-100 text-orange-600', icon: (
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              )},
+            ] as const).map(({ tab: t, label, sub, color, icon }) => (
+              <button
+                key={t}
+                onClick={() => goTo(t)}
+                className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left active:scale-[0.98]"
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 ${color}`}>{icon}</div>
+                <h2 className="text-base font-bold text-gray-900">{label}</h2>
+                <p className="text-xs text-gray-500 mt-0.5">{sub}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 flex gap-4">
+            <button
+              onClick={handleEntrada}
+              className="flex-1 flex items-center justify-center gap-2 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
+              Entrada
+            </button>
+            <button
+              onClick={handleSaida}
+              className="flex-1 flex items-center justify-center gap-2 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
+              Saida
+            </button>
+          </div>
+        </main>
       </div>
     )
   }
@@ -178,8 +264,9 @@ export default function InventoryApp() {
         onGerenciarUsuarios={() => setModalUsuario(true)}
         onSolicitarOP={() => setModalOP(true)}
         onLogout={logout}
+        onHome={user.role === 'admin' ? () => setShowHome(true) : undefined}
       />
-      <NavTabs active={tab} onChange={setTab} userRole={user.role} />
+      <NavTabs active={tab} onChange={t => { setTab(t); setShowHome(false) }} userRole={user.role} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-7 pb-28 lg:pb-12">
         {error && (
