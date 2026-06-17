@@ -130,4 +130,5 @@ alter table historico add column if not exists empresa text not null default 'PE
 
 -- Permite o mesmo código de produto em empresas diferentes (cada uma com saldo próprio)
 alter table produtos drop constraint if exists produtos_codigo_key;
+alter table produtos drop constraint if exists produtos_codigo_empresa_key;
 alter table produtos add constraint produtos_codigo_empresa_key unique (empresa, codigo);
