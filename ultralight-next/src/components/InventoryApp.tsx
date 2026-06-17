@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import type { Produto, TabId } from '@/lib/types'
+import type { Produto, TabId, Empresa } from '@/lib/types'
+import { EMPRESAS } from '@/lib/types'
 import { useInventory } from '@/hooks/useInventory'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
@@ -19,6 +20,7 @@ import Historico    from './tabs/Historico'
 import Producao     from './tabs/Producao'
 import WorkerApp    from './WorkerApp'
 import ExpedicaoApp from './ExpedicaoApp'
+import EstoqueEmpresaView from './EstoqueEmpresaView'
 
 import ModalEntrada     from './modals/ModalEntrada'
 import ModalSaida       from './modals/ModalSaida'
@@ -26,18 +28,21 @@ import ModalProduto     from './modals/ModalProduto'
 import ModalConfirm     from './modals/ModalConfirm'
 import ModalNovoUsuario from './modals/ModalNovoUsuario'
 import ModalSolicitarOP from './modals/ModalSolicitarOP'
+import ModalAjusteSaldo from './modals/ModalAjusteSaldo'
 
 export default function InventoryApp() {
   const { user, loading: authLoading, login, logout, criarUsuario, alterarUsuario, excluirUsuario, usuarios } = useAuth()
   const {
     produtos, historico, hydrated, error, isOnline, pendingSync,
-    registrarEntrada, registrarSaida, adicionarProduto, atualizarProduto, excluirProduto,
+    registrarEntrada, registrarSaida, ajustarSaldo, adicionarProduto, atualizarProduto, excluirProduto, excluirMovimento,
   } = useInventory(user)
-  const { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem } = useOrdens()
+  const { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, excluirOrdem } = useOrdens()
   const { toasts, toast, dismiss } = useToast()
 
   const [tab, setTab]           = useState<TabId>('dashboard')
   const [showHome, setShowHome] = useState(true)
+  const [showEstoques, setShowEstoques] = useState(false)
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<Empresa | null>(null)
 
   const [modalEntrada,   setModalEntrada]   = useState(false)
   const [modalSaida,     setModalSaida]     = useState(false)
@@ -47,6 +52,8 @@ export default function InventoryApp() {
   const [produtoExcluir, setProdutoExcluir] = useState<Produto | null>(null)
   const [modalUsuario,   setModalUsuario]   = useState(false)
   const [modalOP,        setModalOP]        = useState(false)
+  const [modalAjuste,    setModalAjuste]    = useState(false)
+  const [produtoAjuste,  setProdutoAjuste]  = useState<Produto | null>(null)
 
   function handleEntrada() {
     if (produtos.length === 0) { toast('Cadastre ao menos um produto primeiro!', 'warning'); return }
@@ -58,38 +65,57 @@ export default function InventoryApp() {
     setModalSaida(true)
   }
 
-  function handleConfirmarEntrada(produtoId: string, qtd: number, obs: string) {
+  async function handleConfirmarEntrada(produtoId: string, qtd: number, obs: string) {
     const p = produtos.find(x => x.id === produtoId)!
-    registrarEntrada(produtoId, qtd, obs)
+    const res = await registrarEntrada(produtoId, qtd, obs)
+    if (!res.ok) { toast(res.error || 'Erro ao registrar entrada.', 'error'); return }
     setModalEntrada(false)
     toast(`Entrada de ${qtd} ${p.unidade} de "${p.nome}" registrada!`, 'success')
   }
 
-  function handleConfirmarSaida(produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) {
+  async function handleConfirmarSaida(produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) {
     const p = produtos.find(x => x.id === produtoId)!
-    registrarSaida(produtoId, qtd, obs, responsavel, empresaDestino)
+    const res = await registrarSaida(produtoId, qtd, obs, responsavel, empresaDestino)
+    if (!res.ok) { toast(res.error || 'Erro ao registrar saída.', 'error'); return }
     setModalSaida(false)
     toast(`Transferência de ${qtd} ${p.unidade} de "${p.nome}" para ${empresaDestino} registrada!`, 'success')
   }
 
-  function handleSalvarProduto(dados: Omit<Produto, 'id'>, editId?: string) {
+  async function handleSalvarProduto(dados: Omit<Produto, 'id'>, editId?: string) {
     if (editId) {
-      atualizarProduto(editId, dados)
+      const res = await atualizarProduto(editId, dados)
+      if (!res.ok) { toast(res.error || 'Erro ao atualizar produto.', 'error'); return }
       toast(`Produto "${dados.nome}" atualizado!`, 'success')
     } else {
-      adicionarProduto(dados)
+      const res = await adicionarProduto(dados)
+      if (!res.ok) { toast(res.error || 'Erro ao cadastrar produto.', 'error'); return }
       toast(`Produto "${dados.nome}" cadastrado!`, 'success')
     }
     setModalProduto(false)
     setProdutoEdit(null)
   }
 
-  function handleExcluirConfirm() {
+  async function handleExcluirConfirm() {
     if (!produtoExcluir) return
-    excluirProduto(produtoExcluir.id)
+    const res = await excluirProduto(produtoExcluir.id)
+    if (!res.ok) { toast(res.error || 'Erro ao excluir produto.', 'error'); return }
     toast(`Produto "${produtoExcluir.nome}" excluído!`, 'warning')
     setModalExcluir(false)
     setProdutoExcluir(null)
+  }
+
+  async function handleConfirmarAjuste(produtoId: string, novoSaldo: number, obs: string) {
+    const res = await ajustarSaldo(produtoId, novoSaldo, obs)
+    if (!res.ok) { toast(res.error || 'Erro ao ajustar saldo.', 'error'); return }
+    toast('Saldo atualizado!', 'success')
+    setModalAjuste(false)
+    setProdutoAjuste(null)
+  }
+
+  async function handleExcluirMovimento(id: string) {
+    const res = await excluirMovimento(id)
+    if (!res.ok) { toast(res.error || 'Erro ao excluir movimento.', 'error'); return }
+    toast('Movimento excluído!', 'warning')
   }
 
   const codigosExistentes = produtos.map(p => p.codigo)
@@ -149,6 +175,16 @@ export default function InventoryApp() {
     )
   }
 
+  if (empresaSelecionada && empresaSelecionada !== 'PESTLINE') {
+    return (
+      <EstoqueEmpresaView
+        empresa={empresaSelecionada}
+        user={user}
+        onBack={() => setEmpresaSelecionada(null)}
+      />
+    )
+  }
+
   if (!hydrated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -160,7 +196,7 @@ export default function InventoryApp() {
     )
   }
 
-  function goTo(t: TabId) { setTab(t); setShowHome(false) }
+  function goTo(t: TabId) { setTab(t); setShowHome(false); setShowEstoques(false) }
 
   const tabLabel = tab === 'saldo'    ? 'Saldo em Estoque'
     : tab === 'produtos'  ? 'Produtos'
@@ -178,6 +214,57 @@ export default function InventoryApp() {
         : 'Sem internet · exibindo dados em cache'}
     </div>
   ) : null
+
+  // ── Estoques: company picker screen ─────────────────────────────────────────
+  if (showEstoques) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+          <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowEstoques(false)}
+                className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 111.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
+                </svg>
+                Voltar
+              </button>
+            </div>
+            <span className="hidden sm:block text-sm font-semibold text-gray-700">{user.username}</span>
+          </div>
+        </header>
+
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          <div className="text-center mb-10">
+            <p className="text-gray-500 text-sm font-medium uppercase tracking-widest mb-1">Estoques</p>
+            <h1 className="text-2xl font-extrabold text-[#0f2d5e]">Selecione a empresa</h1>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {EMPRESAS.map(emp => (
+              <button
+                key={emp}
+                onClick={() => {
+                  setShowEstoques(false)
+                  if (emp === 'PESTLINE') { goTo('saldo') } else { setEmpresaSelecionada(emp) }
+                }}
+                className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left active:scale-[0.98] flex items-center gap-3"
+              >
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-100 text-blue-600 flex-shrink-0">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
+                </div>
+                <h2 className="text-base font-bold text-gray-900">{emp}</h2>
+              </button>
+            ))}
+          </div>
+        </main>
+
+        <Toast toasts={toasts} dismiss={dismiss} />
+      </div>
+    )
+  }
 
   // ── Home screen ──────────────────────────────────────────────────────────────
   if (showHome) {
@@ -246,6 +333,18 @@ export default function InventoryApp() {
                 <p className="text-xs text-gray-500 mt-0.5">{sub}</p>
               </button>
             ))}
+            {user.role === 'admin' && (
+              <button
+                onClick={() => setShowEstoques(true)}
+                className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left active:scale-[0.98]"
+              >
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 bg-teal-100 text-teal-600">
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>
+                </div>
+                <h2 className="text-base font-bold text-gray-900">Estoques</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Por empresa</p>
+              </button>
+            )}
           </div>
 
           {user.role === 'admin' && (
@@ -348,7 +447,13 @@ export default function InventoryApp() {
         {tab === 'dashboard' && (
           <Dashboard produtos={produtos} historico={historico} onTabChange={setTab} />
         )}
-        {tab === 'saldo'    && <SaldoEstoque produtos={produtos} />}
+        {tab === 'saldo' && (
+          <SaldoEstoque
+            produtos={produtos}
+            titulo="Saldo de Estoque Pestline"
+            onScanFound={p => { setProdutoAjuste(p); setModalAjuste(true) }}
+          />
+        )}
         {tab === 'produtos' && (
           <Produtos
             produtos={produtos}
@@ -357,8 +462,10 @@ export default function InventoryApp() {
             onExcluir={p => { setProdutoExcluir(p); setModalExcluir(true) }}
           />
         )}
-        {tab === 'historico' && <Historico historico={historico} />}
-        {tab === 'producao'  && <Producao ordens={ordens} cancelarOrdem={cancelarOrdem} />}
+        {tab === 'historico' && (
+          <Historico historico={historico} onExcluir={mov => handleExcluirMovimento(mov.id)} />
+        )}
+        {tab === 'producao'  && <Producao ordens={ordens} cancelarOrdem={cancelarOrdem} excluirOrdem={excluirOrdem} />}
       </main>
 
       <ModalEntrada
@@ -387,6 +494,12 @@ export default function InventoryApp() {
         message={produtoExcluir ? `Tem certeza que deseja excluir "${produtoExcluir.nome}"? O histórico de movimentos será mantido.` : ''}
         onClose={() => { setModalExcluir(false); setProdutoExcluir(null) }}
         onConfirm={handleExcluirConfirm}
+      />
+      <ModalAjusteSaldo
+        open={modalAjuste}
+        produto={produtoAjuste}
+        onClose={() => { setModalAjuste(false); setProdutoAjuste(null) }}
+        onConfirm={handleConfirmarAjuste}
       />
       <ModalNovoUsuario
         open={modalUsuario}

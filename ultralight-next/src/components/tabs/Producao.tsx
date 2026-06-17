@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react'
 import type { OrdemProducao } from '@/lib/types'
 import { fmtDate } from '@/lib/utils'
+import ModalConfirm from '@/components/modals/ModalConfirm'
 
 interface Props {
   ordens: OrdemProducao[]
   cancelarOrdem?: (id: string) => Promise<{ ok: boolean; error?: string }>
+  excluirOrdem?: (id: string) => Promise<{ ok: boolean; error?: string }>
 }
 
 type Setor = 'chaparia' | 'almoxarifado' | 'montagem'
@@ -46,12 +48,14 @@ function elapsedStr(ms: number): string {
   return `${s}s`
 }
 
-function OrdemDetailPanel({ ordem, onClose, onCancelar }: {
+function OrdemDetailPanel({ ordem, onClose, onCancelar, onExcluir }: {
   ordem: OrdemProducao
   onClose: () => void
   onCancelar?: (id: string) => Promise<{ ok: boolean; error?: string }>
+  onExcluir?: (ordem: OrdemProducao) => void
 }) {
   const [cancelling, setCancelling] = useState(false)
+  const isHistorico = ordem.status === 'concluida' || ordem.status === 'cancelada'
 
   async function handleCancelar() {
     if (!onCancelar) return
@@ -153,6 +157,16 @@ function OrdemDetailPanel({ ordem, onClose, onCancelar }: {
               className="w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-colors"
             >
               {cancelling ? 'Cancelando...' : 'Cancelar Ordem'}
+            </button>
+          </div>
+        )}
+        {onExcluir && isHistorico && (
+          <div className="px-5 py-3 border-t border-gray-100">
+            <button
+              onClick={() => onExcluir(ordem)}
+              className="w-full py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-sm font-bold rounded-xl transition-colors"
+            >
+              Excluir do histórico
             </button>
           </div>
         )}
@@ -268,10 +282,20 @@ function SetorView({ ordens, tick, onCancelar, onSelect }: { ordens: OrdemProduc
   )
 }
 
-export default function Producao({ ordens, cancelarOrdem }: Props) {
+export default function Producao({ ordens, cancelarOrdem, excluirOrdem }: Props) {
   const [setor, setSetor]           = useState<Setor>('chaparia')
   const [tick, setTick]             = useState(0)
   const [selectedOrdem, setSelectedOrdem] = useState<OrdemProducao | null>(null)
+  const [ordemExcluir, setOrdemExcluir]   = useState<OrdemProducao | null>(null)
+  const [excluindo, setExcluindo]         = useState(false)
+
+  async function handleExcluirConfirm() {
+    if (!ordemExcluir || !excluirOrdem) return
+    setExcluindo(true)
+    await excluirOrdem(ordemExcluir.id)
+    setExcluindo(false)
+    setOrdemExcluir(null)
+  }
 
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 1000)
@@ -356,8 +380,16 @@ export default function Producao({ ordens, cancelarOrdem }: Props) {
           ordem={selectedOrdem}
           onClose={() => setSelectedOrdem(null)}
           onCancelar={cancelarOrdem}
+          onExcluir={excluirOrdem ? ordem => { setOrdemExcluir(ordem); setSelectedOrdem(null) } : undefined}
         />
       )}
+      <ModalConfirm
+        open={!!ordemExcluir}
+        title="Excluir Ordem"
+        message={excluindo ? 'Excluindo...' : 'Tem certeza que deseja excluir esta ordem do histórico? Esta ação não pode ser desfeita.'}
+        onClose={() => setOrdemExcluir(null)}
+        onConfirm={handleExcluirConfirm}
+      />
     </div>
   )
 }

@@ -13,7 +13,7 @@ function Row({ label, value, children }: { label: string; value?: string; childr
   )
 }
 
-export default function MovimentoDetailModal({ mov, onClose }: { mov: Movimento; onClose: () => void }) {
+export default function MovimentoDetailModal({ mov, onClose, onExcluir }: { mov: Movimento; onClose: () => void; onExcluir?: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -64,7 +64,10 @@ export default function MovimentoDetailModal({ mov, onClose }: { mov: Movimento;
           {mov.obs && <Row label="Observação" value={mov.obs} />}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-between gap-2.5">
+          {onExcluir
+            ? <button onClick={onExcluir} className="px-4 py-2 text-red-600 hover:bg-red-50 text-sm font-semibold rounded-lg transition-colors">Excluir movimento</button>
+            : <span />}
           <button onClick={onClose} className="btn-cancel">Fechar</button>
         </div>
       </div>

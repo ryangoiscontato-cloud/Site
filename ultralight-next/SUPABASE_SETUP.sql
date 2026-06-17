@@ -123,3 +123,11 @@ on conflict (username) do nothing;
 insert into usuarios (username, senha_hash, role)
 values ('EXPEDICAO', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'expedicao')
 on conflict (username) do nothing;
+
+-- 12. Estoques por empresa (PESTLINE / ULTRALIGHT / UL BRASIL / ULTRA FOODS / PESTSTORE) ----
+alter table produtos  add column if not exists empresa text not null default 'PESTLINE';
+alter table historico add column if not exists empresa text not null default 'PESTLINE';
+
+-- Permite o mesmo código de produto em empresas diferentes (cada uma com saldo próprio)
+alter table produtos drop constraint if exists produtos_codigo_key;
+alter table produtos add constraint produtos_codigo_empresa_key unique (empresa, codigo);

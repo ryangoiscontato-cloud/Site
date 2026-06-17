@@ -10,11 +10,12 @@ interface Props {
   open: boolean
   produtos: Produto[]
   presetProdutoId?: string
+  requireDestino?: boolean
   onClose: () => void
   onConfirm: (produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) => void
 }
 
-export default function ModalSaida({ open, produtos, presetProdutoId, onClose, onConfirm }: Props) {
+export default function ModalSaida({ open, produtos, presetProdutoId, requireDestino = true, onClose, onConfirm }: Props) {
   const [produtoId,      setProdutoId]      = useState('')
   const [qtd,            setQtd]            = useState('')
   const [obs,            setObs]            = useState('')
@@ -78,10 +79,12 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
     const q = Number(qtd)
     if (!qtd || q <= 0)                     errs.qtd            = 'Informe uma quantidade válida'
     else if (produto && q > produto.saldo)  errs.qtd            = `Saldo insuficiente. Disponível: ${produto.saldo} ${produto.unidade}`
-    if (!responsavel.trim())                errs.responsavel    = 'Informe o nome do responsável'
-    if (!empresaDestino)                    errs.empresaDestino = 'Selecione a empresa de destino'
+    if (requireDestino) {
+      if (!responsavel.trim())              errs.responsavel    = 'Informe o nome do responsável'
+      if (!empresaDestino)                  errs.empresaDestino = 'Selecione a empresa de destino'
+    }
     if (Object.keys(errs).length) { setErrors(errs); return }
-    onConfirm(produtoId, q, obs.trim(), responsavel.trim(), empresaDestino)
+    onConfirm(produtoId, q, obs.trim(), requireDestino ? responsavel.trim() : '', requireDestino ? empresaDestino : '')
   }
 
   if (!open) return null
@@ -98,8 +101,8 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
               </svg>
             </div>
             <div>
-              <h3 className="text-base font-bold text-gray-900">Registrar Transferência</h3>
-              <p className="text-xs text-gray-500">Pestline → Empresa destino</p>
+              <h3 className="text-base font-bold text-gray-900">{requireDestino ? 'Registrar Transferência' : 'Registrar Saída'}</h3>
+              <p className="text-xs text-gray-500">{requireDestino ? 'Pestline → Empresa destino' : 'Retirar do estoque'}</p>
             </div>
           </div>
           <button onClick={onClose} className="modal-close-btn">&times;</button>
@@ -156,31 +159,35 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
           </div>
 
           {/* Responsável */}
-          <div>
-            <label className="field-label">Responsável *</label>
-            <input
-              type="text"
-              value={responsavel}
-              onChange={e => setResponsavel(e.target.value)}
-              placeholder="Nome de quem está fazendo a movimentação"
-              className={`form-field ${errors.responsavel ? 'border-red-400 ring-2 ring-red-100' : ''}`}
-            />
-            {errors.responsavel && <p className="field-error">{errors.responsavel}</p>}
-          </div>
+          {requireDestino && (
+            <div>
+              <label className="field-label">Responsável *</label>
+              <input
+                type="text"
+                value={responsavel}
+                onChange={e => setResponsavel(e.target.value)}
+                placeholder="Nome de quem está fazendo a movimentação"
+                className={`form-field ${errors.responsavel ? 'border-red-400 ring-2 ring-red-100' : ''}`}
+              />
+              {errors.responsavel && <p className="field-error">{errors.responsavel}</p>}
+            </div>
+          )}
 
           {/* Empresa Destino */}
-          <div>
-            <label className="field-label">Empresa Destino *</label>
-            <select
-              value={empresaDestino}
-              onChange={e => setEmpresaDestino(e.target.value)}
-              className={`form-field ${errors.empresaDestino ? 'border-red-400 ring-2 ring-red-100' : ''}`}
-            >
-              <option value="">— Selecione a empresa —</option>
-              {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
-            </select>
-            {errors.empresaDestino && <p className="field-error">{errors.empresaDestino}</p>}
-          </div>
+          {requireDestino && (
+            <div>
+              <label className="field-label">Empresa Destino *</label>
+              <select
+                value={empresaDestino}
+                onChange={e => setEmpresaDestino(e.target.value)}
+                className={`form-field ${errors.empresaDestino ? 'border-red-400 ring-2 ring-red-100' : ''}`}
+              >
+                <option value="">— Selecione a empresa —</option>
+                {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+              {errors.empresaDestino && <p className="field-error">{errors.empresaDestino}</p>}
+            </div>
+          )}
 
           {/* Observação */}
           <div>
@@ -205,7 +212,7 @@ export default function ModalSaida({ open, produtos, presetProdutoId, onClose, o
             <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
             </svg>
-            Confirmar Transferência
+            {requireDestino ? 'Confirmar Transferência' : 'Confirmar Saída'}
           </button>
         </div>
       </div>

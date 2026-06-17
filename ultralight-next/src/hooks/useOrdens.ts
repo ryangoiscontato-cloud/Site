@@ -229,5 +229,15 @@ export function useOrdens() {
     return { ok: true }
   }, [fetchAll])
 
-  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, hydrated }
+  const excluirOrdem = useCallback(async (id: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
+
+    const { error } = await supabase.from('ordens_producao').delete().eq('id', id)
+
+    if (error) return { ok: false, error: 'Erro ao excluir ordem.' }
+    await fetchAll()
+    return { ok: true }
+  }, [fetchAll])
+
+  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, excluirOrdem, hydrated }
 }

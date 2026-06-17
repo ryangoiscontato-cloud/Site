@@ -11,8 +11,8 @@ interface Props {
   user: Usuario
   logout: () => void
   produtos: Produto[]
-  registrarEntrada: (produtoId: string, qtd: number, obs: string) => void
-  registrarSaida:   (produtoId: string, qtd: number, obs: string, responsavel?: string, empresaDestino?: string) => void
+  registrarEntrada: (produtoId: string, qtd: number, obs: string) => Promise<{ ok: boolean; error?: string }>
+  registrarSaida:   (produtoId: string, qtd: number, obs: string, responsavel?: string, empresaDestino?: string) => Promise<{ ok: boolean; error?: string }>
 }
 
 export default function ExpedicaoApp({ user, logout, produtos, registrarEntrada, registrarSaida }: Props) {
@@ -20,16 +20,18 @@ export default function ExpedicaoApp({ user, logout, produtos, registrarEntrada,
   const [modalEntrada, setModalEntrada] = useState(false)
   const [modalSaida,   setModalSaida]   = useState(false)
 
-  function handleConfirmarEntrada(produtoId: string, qtd: number, obs: string) {
+  async function handleConfirmarEntrada(produtoId: string, qtd: number, obs: string) {
     const p = produtos.find(x => x.id === produtoId)!
-    registrarEntrada(produtoId, qtd, obs)
+    const res = await registrarEntrada(produtoId, qtd, obs)
+    if (!res.ok) { toast(res.error || 'Erro ao registrar entrada.', 'error'); return }
     setModalEntrada(false)
     toast(`Entrada de ${qtd} ${p.unidade} de "${p.nome}" registrada!`, 'success')
   }
 
-  function handleConfirmarSaida(produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) {
+  async function handleConfirmarSaida(produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) {
     const p = produtos.find(x => x.id === produtoId)!
-    registrarSaida(produtoId, qtd, obs, responsavel, empresaDestino)
+    const res = await registrarSaida(produtoId, qtd, obs, responsavel, empresaDestino)
+    if (!res.ok) { toast(res.error || 'Erro ao registrar saída.', 'error'); return }
     setModalSaida(false)
     toast(`Saída de ${qtd} ${p.unidade} de "${p.nome}" registrada!`, 'success')
   }

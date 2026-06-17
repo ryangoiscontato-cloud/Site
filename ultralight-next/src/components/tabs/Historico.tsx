@@ -7,9 +7,10 @@ import MovimentoDetailModal from '@/components/modals/MovimentoDetailModal'
 
 interface Props {
   historico: Movimento[]
+  onExcluir?: (mov: Movimento) => void
 }
 
-type Preset = 'hoje' | 'todos' | '7dias' | 'mes' | 'ano' | 'personalizado'
+type Preset = 'hoje' | 'ontem' | 'todos' | '7dias' | 'mes' | 'ano' | 'personalizado'
 
 function localISODate(d: Date): string {
   // yyyy-mm-dd in local time (avoids UTC off-by-one)
@@ -17,7 +18,7 @@ function localISODate(d: Date): string {
   return new Date(d.getTime() - tz).toISOString().slice(0, 10)
 }
 
-export default function Historico({ historico }: Props) {
+export default function Historico({ historico, onExcluir }: Props) {
   const [search,    setSearch]   = useState('')
   const [tipoFilter, setTipo]    = useState<'' | 'entrada' | 'saida'>('')
   const [preset,    setPreset]   = useState<Preset>('todos')
@@ -31,6 +32,11 @@ export default function Historico({ historico }: Props) {
     const today = localISODate(now)
     if (preset === 'hoje') {
       return { rangeFrom: today, rangeTo: today }
+    }
+    if (preset === 'ontem') {
+      const d = new Date(); d.setDate(d.getDate() - 1)
+      const y = localISODate(d)
+      return { rangeFrom: y, rangeTo: y }
     }
     if (preset === '7dias') {
       const d = new Date(); d.setDate(d.getDate() - 6)
@@ -79,10 +85,11 @@ export default function Historico({ historico }: Props) {
 
   const presets: { id: Preset; label: string }[] = [
     { id: 'hoje',          label: 'Hoje' },
-    { id: 'todos',         label: 'Tudo' },
+    { id: 'ontem',         label: 'Ontem' },
     { id: '7dias',         label: 'Últimos 7 dias' },
     { id: 'mes',           label: 'Este mês' },
     { id: 'ano',           label: 'Este ano' },
+    { id: 'todos',         label: 'Tudo' },
     { id: 'personalizado', label: 'Personalizado' },
   ]
 
@@ -250,7 +257,13 @@ export default function Historico({ historico }: Props) {
         </div>
       </div>
 
-      {selected && <MovimentoDetailModal mov={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <MovimentoDetailModal
+          mov={selected}
+          onClose={() => setSelected(null)}
+          onExcluir={onExcluir ? () => { onExcluir(selected); setSelected(null) } : undefined}
+        />
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import type { Produto } from '@/lib/types'
 
 interface Props {
@@ -18,6 +18,39 @@ function StatusBadge({ p }: { p: Produto }) {
 
 export default function Produtos({ produtos, onNovo, onEditar, onExcluir }: Props) {
   const [search, setSearch] = useState('')
+
+  const produtosRef = useRef<Produto[]>(produtos)
+  useEffect(() => { produtosRef.current = produtos }, [produtos])
+
+  const onEditarRef = useRef(onEditar)
+  useEffect(() => { onEditarRef.current = onEditar }, [onEditar])
+
+  // HID barcode scanner auto-detection
+  useEffect(() => {
+    let buf = ''
+    let lastTime = 0
+    function onKey(e: KeyboardEvent) {
+      const now = Date.now()
+      if (e.key === 'Enter') {
+        if (buf.length >= 3) {
+          const clean = buf.trim()
+          const found = produtosRef.current.find(p => (p.codigoBarras || '').trim() === clean)
+          if (found) {
+            setSearch(found.nome)
+            onEditarRef.current(found)
+          } else {
+            setSearch(clean)
+          }
+        }
+        buf = ''; lastTime = 0; return
+      }
+      if (e.key.length !== 1) return
+      if (lastTime > 0 && now - lastTime > 80) buf = ''
+      buf += e.key; lastTime = now
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, []) // empty deps, uses refs
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -52,32 +85,41 @@ export default function Produtos({ produtos, onNovo, onEditar, onExcluir }: Prop
       </div>
 
       {/* Search bar */}
-      <div className="relative mb-4">
-        <svg
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          viewBox="0 0 20 20" fill="currentColor"
-        >
-          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-        </svg>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Pesquisar por nome, código ou categoria..."
-          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm transition-all"
-          autoCorrect="off"
-          spellCheck={false}
-        />
-        {search && (
-          <button
-            onClick={() => setSearch('')}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5"
+      <div className="flex items-center gap-2 mb-4">
+        <div className="relative flex-1">
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            viewBox="0 0 20 20" fill="currentColor"
           >
-            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
-            </svg>
-          </button>
-        )}
+            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Pesquisar por nome, código ou categoria..."
+            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 shadow-sm transition-all"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+            </button>
+          )}
+        </div>
+        <span className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-1 flex-shrink-0">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
+          Scanner ativo
+        </span>
       </div>
 
       {produtos.length === 0 ? (

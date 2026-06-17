@@ -1,3 +1,7 @@
+export type Empresa = 'PESTLINE' | 'ULTRALIGHT' | 'UL BRASIL' | 'ULTRA FOODS' | 'PESTSTORE'
+
+export const EMPRESAS: Empresa[] = ['PESTLINE', 'ULTRALIGHT', 'UL BRASIL', 'ULTRA FOODS', 'PESTSTORE']
+
 export interface Produto {
   id: string
   codigo: string
@@ -7,6 +11,7 @@ export interface Produto {
   estoqueMin: number
   saldo: number
   codigoBarras?: string
+  empresa?: Empresa
 }
 
 export type UserRole = 'admin' | 'user' | 'chaparia' | 'almoxarifado' | 'expedicao' | 'montagem'
@@ -29,6 +34,7 @@ export interface Movimento {
   empresaDestino?: string
   usuarioId?: string
   usuarioNome?: string
+  empresa?: Empresa
 }
 
 export interface PausaOrdem {
