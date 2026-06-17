@@ -1,12 +1,50 @@
 {
   "name": "ultralight-next",
   "version": "0.1.0",
+  "description": "Ultralight - Gestão de Produção e Estoque",
+  "author": "Ultralight",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "electron:build-renderer": "cross-env ELECTRON_BUILD=true next build",
+    "electron:start": "npm run electron:build-renderer && electron .",
+    "electron:dist": "npm run electron:build-renderer && electron-builder",
+    "electron:dist:win": "npm run electron:build-renderer && electron-builder --win",
+    "electron:dist:mac": "npm run electron:build-renderer && electron-builder --mac",
+    "electron:dist:linux": "npm run electron:build-renderer && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.ultralight.estoque",
+    "productName": "Ultralight Estoque",
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "!node_modules/**/*"
+    ],
+    "directories": {
+      "output": "dist-electron"
+    },
+    "icon": "public/logo.png",
+    "win": {
+      "target": ["nsis"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.business"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office",
+      "executableName": "ultralight-estoque"
+    }
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
@@ -22,6 +60,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "typescript": "^5"
