@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Produto, Movimento, Usuario, Empresa } from '@/lib/types'
+import { EMPRESAS } from '@/lib/types'
 import { supabase, isConfigured } from '@/lib/supabase'
 import { uid } from '@/lib/utils'
 
@@ -309,12 +310,24 @@ export function useInventory(currentUser: Usuario | null, empresa: Empresa = 'PE
     }
 
     setProdutos(prev => [...prev, novo])
+
+    // Replica o cadastro do produto nas demais empresas, cada uma com saldo próprio (começa em 0).
+    const outras = EMPRESAS.filter(e => e !== empresa)
+    void Promise.all(outras.map(e => supabase!.from('produtos').insert({
+      id: uid(), codigo: novo.codigo, nome: novo.nome, categoria: novo.categoria,
+      unidade: novo.unidade, estoque_min: novo.estoqueMin, saldo: 0,
+      codigo_barras: novo.codigoBarras ?? '', empresa: e,
+    })))
+
     return { ok: true }
   }, [empresa])
 
   const atualizarProduto = useCallback(async (id: string, dados: Partial<Omit<Produto, 'id' | 'saldo'>>): Promise<Result> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
     if (!navigator.onLine) return { ok: false, error: 'Sem conexão. Tente novamente quando estiver online.' }
+
+    const atual = produtos.find(p => p.id === id)
+    const codigoAntigo = atual?.codigo
 
     const patch: Record<string, unknown> = {}
     if (dados.codigo       !== undefined) patch.codigo        = dados.codigo
@@ -328,8 +341,15 @@ export function useInventory(currentUser: Usuario | null, empresa: Empresa = 'PE
     if (error) return { ok: false, error: 'Erro ao atualizar produto. Verifique se o código já existe.' }
 
     setProdutos(prev => prev.map(p => p.id === id ? { ...p, ...dados } : p))
+
+    // Mantém o cadastro (exceto saldo) sincronizado com as demais empresas.
+    if (codigoAntigo && Object.keys(patch).length > 0) {
+      const outras = EMPRESAS.filter(e => e !== empresa)
+      void Promise.all(outras.map(e => supabase!.from('produtos').update(patch).eq('empresa', e).eq('codigo', codigoAntigo)))
+    }
+
     return { ok: true }
-  }, [])
+  }, [produtos, empresa])
 
   const excluirProduto = useCallback(async (id: string): Promise<Result> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }

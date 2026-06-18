@@ -13,6 +13,12 @@ interface Props {
 
 type Setor = 'chaparia' | 'almoxarifado' | 'montagem'
 
+const SETOR_INFO: Record<Setor, { label: string; dot: string; text: string; border: string }> = {
+  chaparia:     { label: 'Chaparia',     dot: 'bg-blue-500',   text: 'text-blue-700',   border: 'hover:border-blue-200' },
+  almoxarifado: { label: 'Almoxarifado', dot: 'bg-purple-500', text: 'text-purple-700', border: 'hover:border-purple-200' },
+  montagem:     { label: 'Montagem',     dot: 'bg-teal-500',   text: 'text-teal-700',   border: 'hover:border-teal-200' },
+}
+
 function StatusBadge({ status }: { status: OrdemProducao['status'] }) {
   if (status === 'pendente')
     return <span className="badge-orange">Pendente</span>
@@ -282,8 +288,46 @@ function SetorView({ ordens, tick, onCancelar, onSelect }: { ordens: OrdemProduc
   )
 }
 
+function setorCounts(ordens: OrdemProducao[]) {
+  return {
+    pendentes:  ordens.filter(o => o.status === 'pendente').length,
+    andamento:  ordens.filter(o => o.status === 'em_producao' || o.status === 'pausada').length,
+    concluidas: ordens.filter(o => o.status === 'concluida').length,
+  }
+}
+
+function SetorCard({ setor, ordens, onSelect }: { setor: Setor; ordens: OrdemProducao[]; onSelect: (s: Setor) => void }) {
+  const info = SETOR_INFO[setor]
+  const c = setorCounts(ordens)
+  return (
+    <button
+      onClick={() => onSelect(setor)}
+      className={`bg-white border border-gray-200 rounded-2xl p-5 shadow-sm text-left transition-all hover:shadow-md ${info.border}`}
+    >
+      <div className="flex items-center gap-2 mb-5">
+        <span className={`w-3 h-3 rounded-full ${info.dot}`} />
+        <h2 className="text-base font-bold text-gray-900">{info.label}</h2>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="text-2xl font-bold text-orange-600">{c.pendentes}</p>
+          <p className="text-[0.6rem] font-semibold text-gray-400 uppercase tracking-wide mt-0.5">Pendentes</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-blue-600">{c.andamento}</p>
+          <p className="text-[0.6rem] font-semibold text-gray-400 uppercase tracking-wide mt-0.5">Andamento</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-green-600">{c.concluidas}</p>
+          <p className="text-[0.6rem] font-semibold text-gray-400 uppercase tracking-wide mt-0.5">Concluídas</p>
+        </div>
+      </div>
+    </button>
+  )
+}
+
 export default function Producao({ ordens, cancelarOrdem, excluirOrdem }: Props) {
-  const [setor, setSetor]           = useState<Setor>('chaparia')
+  const [setor, setSetor]           = useState<Setor | null>(null)
   const [tick, setTick]             = useState(0)
   const [selectedOrdem, setSelectedOrdem] = useState<OrdemProducao | null>(null)
   const [ordemExcluir, setOrdemExcluir]   = useState<OrdemProducao | null>(null)
@@ -302,79 +346,61 @@ export default function Producao({ ordens, cancelarOrdem, excluirOrdem }: Props)
     return () => clearInterval(id)
   }, [])
 
-  const chaparia     = ordens.filter(o => o.usuarioDestino === 'CHAPARIA')
-  const almoxarifado = ordens.filter(o => o.usuarioDestino === 'ALMOXARIFADO')
-  const montagem     = ordens.filter(o => o.usuarioDestino === 'MONTAGEM')
+  const porSetor: Record<Setor, OrdemProducao[]> = {
+    chaparia:     ordens.filter(o => o.usuarioDestino === 'CHAPARIA'),
+    almoxarifado: ordens.filter(o => o.usuarioDestino === 'ALMOXARIFADO'),
+    montagem:     ordens.filter(o => o.usuarioDestino === 'MONTAGEM'),
+  }
 
-  const pendentes   = ordens.filter(o => o.status === 'pendente').length
-  const emAndamento = ordens.filter(o => o.status === 'em_producao' || o.status === 'pausada').length
-  const concluidas  = ordens.filter(o => o.status === 'concluida').length
+  if (!setor) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-blue-900 tracking-tight mb-6">Produção</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {(['chaparia', 'almoxarifado', 'montagem'] as Setor[]).map(s => (
+            <SetorCard key={s} setor={s} ordens={porSetor[s]} onSelect={setSetor} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const info = SETOR_INFO[setor]
+  const c = setorCounts(porSetor[setor])
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-blue-900 tracking-tight mb-6">Produção</h1>
+      <button
+        onClick={() => setSetor(null)}
+        className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+        Setores
+      </button>
+      <h1 className={`text-2xl font-bold tracking-tight mb-6 flex items-center gap-2.5 ${info.text}`}>
+        <span className={`w-3 h-3 rounded-full ${info.dot}`} />
+        {info.label}
+      </h1>
 
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-center">
           <p className="text-[0.65rem] font-semibold text-gray-400 uppercase tracking-widest mb-1">Pendentes</p>
-          <p className="text-3xl font-bold text-orange-600">{pendentes}</p>
+          <p className="text-3xl font-bold text-orange-600">{c.pendentes}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-center">
           <p className="text-[0.65rem] font-semibold text-gray-400 uppercase tracking-widest mb-1">Andamento</p>
-          <p className="text-3xl font-bold text-blue-600">{emAndamento}</p>
+          <p className="text-3xl font-bold text-blue-600">{c.andamento}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-center">
           <p className="text-[0.65rem] font-semibold text-gray-400 uppercase tracking-widest mb-1">Concluídas</p>
-          <p className="text-3xl font-bold text-green-600">{concluidas}</p>
+          <p className="text-3xl font-bold text-green-600">{c.concluidas}</p>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setSetor('chaparia')}
-            className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-bold border-b-2 transition-all ${
-              setor === 'chaparia'
-                ? 'text-blue-700 border-blue-600 bg-blue-50'
-                : 'text-gray-500 border-transparent hover:bg-gray-50'
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            Chaparia
-          </button>
-          <button
-            onClick={() => setSetor('almoxarifado')}
-            className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-bold border-b-2 transition-all ${
-              setor === 'almoxarifado'
-                ? 'text-purple-700 border-purple-600 bg-purple-50'
-                : 'text-gray-500 border-transparent hover:bg-gray-50'
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-            Almoxarifado
-          </button>
-          <button
-            onClick={() => setSetor('montagem')}
-            className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-bold border-b-2 transition-all ${
-              setor === 'montagem'
-                ? 'text-teal-700 border-teal-600 bg-teal-50'
-                : 'text-gray-500 border-transparent hover:bg-gray-50'
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-            Montagem
-          </button>
-        </div>
-
-        <div className="p-4">
-          {setor === 'chaparia'
-            ? <SetorView ordens={chaparia} tick={tick} onCancelar={cancelarOrdem} onSelect={setSelectedOrdem} />
-            : setor === 'almoxarifado'
-            ? <SetorView ordens={almoxarifado} tick={tick} onCancelar={cancelarOrdem} onSelect={setSelectedOrdem} />
-            : <SetorView ordens={montagem} tick={tick} onCancelar={cancelarOrdem} onSelect={setSelectedOrdem} />
-          }
-        </div>
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
+        <SetorView ordens={porSetor[setor]} tick={tick} onCancelar={cancelarOrdem} onSelect={setSelectedOrdem} />
       </div>
+
       {selectedOrdem && (
         <OrdemDetailPanel
           ordem={selectedOrdem}

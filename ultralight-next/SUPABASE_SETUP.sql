@@ -132,3 +132,12 @@ alter table historico add column if not exists empresa text not null default 'PE
 alter table produtos drop constraint if exists produtos_codigo_key;
 alter table produtos drop constraint if exists produtos_codigo_empresa_key;
 alter table produtos add constraint produtos_codigo_empresa_key unique (empresa, codigo);
+
+-- 13. Replica produtos já cadastrados na Pestline para as demais empresas -----
+-- (cada empresa fica com seu próprio saldo, iniciando em 0; execução idempotente)
+insert into produtos (id, codigo, nome, categoria, unidade, estoque_min, saldo, codigo_barras, empresa)
+select gen_random_uuid()::text, p.codigo, p.nome, p.categoria, p.unidade, p.estoque_min, 0, p.codigo_barras, e.empresa
+from produtos p
+cross join (values ('ULTRALIGHT'), ('UL BRASIL'), ('ULTRA FOODS'), ('PESTSTORE')) as e(empresa)
+where p.empresa = 'PESTLINE'
+on conflict (empresa, codigo) do nothing;
