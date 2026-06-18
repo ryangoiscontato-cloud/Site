@@ -1,22 +1,22 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import type { Produto } from '@/lib/types'
+import type { Produto, Empresa } from '@/lib/types'
 import { EMPRESAS } from '@/lib/types'
 import ProductSearchSelect from '@/components/ProductSearchSelect'
-
-const EMPRESAS_DESTINO = EMPRESAS.filter(e => e !== 'PESTLINE')
 
 interface Props {
   open: boolean
   produtos: Produto[]
   presetProdutoId?: string
   requireDestino?: boolean
+  empresaOrigem?: Empresa
   onClose: () => void
   onConfirm: (produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) => void
 }
 
-export default function ModalSaida({ open, produtos, presetProdutoId, requireDestino = true, onClose, onConfirm }: Props) {
+export default function ModalSaida({ open, produtos, presetProdutoId, requireDestino = true, empresaOrigem, onClose, onConfirm }: Props) {
+  const empresasDestino = EMPRESAS.filter(e => e !== (empresaOrigem ?? 'PESTLINE'))
   const [produtoId,      setProdutoId]      = useState('')
   const [qtd,            setQtd]            = useState('')
   const [obs,            setObs]            = useState('')
@@ -184,7 +184,7 @@ export default function ModalSaida({ open, produtos, presetProdutoId, requireDes
                 className={`form-field ${errors.empresaDestino ? 'border-red-400 ring-2 ring-red-100' : ''}`}
               >
                 <option value="">— Selecione a empresa —</option>
-                {EMPRESAS_DESTINO.map(e => <option key={e} value={e}>{e}</option>)}
+                {empresasDestino.map(e => <option key={e} value={e}>{e}</option>)}
               </select>
               {errors.empresaDestino && <p className="field-error">{errors.empresaDestino}</p>}
             </div>

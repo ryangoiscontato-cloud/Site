@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Produto, Movimento, Usuario, Empresa } from '@/lib/types'
+import type { Produto, Movimento, Usuario, Empresa, EstoqueScope } from '@/lib/types'
 import { EMPRESAS } from '@/lib/types'
 import { supabase, isConfigured } from '@/lib/supabase'
 import { uid } from '@/lib/utils'
@@ -69,7 +69,7 @@ function mapMovimento(r: HistoricoRow): Movimento {
   }
 }
 
-export function useInventory(currentUser: Usuario | null, empresa: Empresa = 'PESTLINE') {
+export function useInventory(currentUser: Usuario | null, empresa: EstoqueScope = 'PESTLINE') {
   const [produtos, setProdutos]   = useState<Produto[]>([])
   const [historico, setHistorico] = useState<Movimento[]>([])
   const [hydrated, setHydrated]   = useState(false)
@@ -330,12 +330,15 @@ export function useInventory(currentUser: Usuario | null, empresa: Empresa = 'PE
     setProdutos(prev => [...prev, novo])
 
     // Replica o cadastro do produto nas demais empresas, cada uma com saldo próprio (começa em 0).
-    const outras = EMPRESAS.filter(e => e !== empresa)
-    void Promise.all(outras.map(e => supabase!.from('produtos').insert({
-      id: uid(), codigo: novo.codigo, nome: novo.nome, categoria: novo.categoria,
-      unidade: novo.unidade, estoque_min: novo.estoqueMin, saldo: 0,
-      codigo_barras: novo.codigoBarras ?? '', empresa: e,
-    })))
+    // Escopos que não são empresas (ex.: ALMOXARIFADO) têm catálogo próprio e não são replicados.
+    if (EMPRESAS.includes(empresa as Empresa)) {
+      const outras = EMPRESAS.filter(e => e !== empresa)
+      void Promise.all(outras.map(e => supabase!.from('produtos').insert({
+        id: uid(), codigo: novo.codigo, nome: novo.nome, categoria: novo.categoria,
+        unidade: novo.unidade, estoque_min: novo.estoqueMin, saldo: 0,
+        codigo_barras: novo.codigoBarras ?? '', empresa: e,
+      })))
+    }
 
     return { ok: true }
   }, [empresa])
@@ -361,7 +364,7 @@ export function useInventory(currentUser: Usuario | null, empresa: Empresa = 'PE
     setProdutos(prev => prev.map(p => p.id === id ? { ...p, ...dados } : p))
 
     // Mantém o cadastro (exceto saldo) sincronizado com as demais empresas.
-    if (codigoAntigo && Object.keys(patch).length > 0) {
+    if (codigoAntigo && Object.keys(patch).length > 0 && EMPRESAS.includes(empresa as Empresa)) {
       const outras = EMPRESAS.filter(e => e !== empresa)
       void Promise.all(outras.map(e => supabase!.from('produtos').update(patch).eq('empresa', e).eq('codigo', codigoAntigo)))
     }

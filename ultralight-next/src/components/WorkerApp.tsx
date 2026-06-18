@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import type { Usuario, OrdemProducao } from '@/lib/types'
 import OrdensList from './worker/OrdensList'
 import OrdemDetail from './worker/OrdemDetail'
+import EstoqueEmpresaView from './EstoqueEmpresaView'
 
 const NAV_KEY = 'ul_worker_nav_state'
 
@@ -27,7 +28,7 @@ interface Props {
   retomarOrdem:  (id: string) => Promise<{ ok: boolean; error?: string }>
 }
 
-type Screen = 'menu' | 'ordens' | 'historico'
+type Screen = 'menu' | 'ordens' | 'historico' | 'saldo'
 
 export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem }: Props) {
   const [screen, setScreen]         = useState<Screen>(() => loadNavState().screen)
@@ -88,6 +89,16 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
     )
   }
 
+  if (screen === 'saldo') {
+    return (
+      <EstoqueEmpresaView
+        empresa="ALMOXARIFADO"
+        user={user}
+        onBack={() => setScreen('menu')}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <WorkerHeader />
@@ -132,6 +143,21 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
                 <h2 className="text-xl font-bold text-gray-900">{historicoLabel}</h2>
                 <p className="text-sm text-gray-500 mt-1">Ver ordens concluídas anteriormente</p>
               </button>
+
+              {isAlmox && (
+                <button
+                  onClick={() => setScreen('saldo')}
+                  className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-200 transition-all text-left active:scale-[0.98]"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center mb-4">
+                    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/>
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">Saldo de Estoque</h2>
+                  <p className="text-sm text-gray-500 mt-1">Materiais do Almoxarifado</p>
+                </button>
+              )}
             </div>
           </div>
         )}

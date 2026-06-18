@@ -2,6 +2,9 @@ export type Empresa = 'PESTLINE' | 'ULTRALIGHT' | 'UL BRASIL' | 'ULTRA FOODS' | 
 
 export const EMPRESAS: Empresa[] = ['PESTLINE', 'ULTRALIGHT', 'UL BRASIL', 'ULTRA FOODS', 'PESTSTORE']
 
+// Escopos de estoque que não são empresas (ex.: estoque interno de materiais do Almoxarifado).
+export type EstoqueScope = Empresa | 'ALMOXARIFADO'
+
 export interface Produto {
   id: string
   codigo: string
@@ -11,7 +14,7 @@ export interface Produto {
   estoqueMin: number
   saldo: number
   codigoBarras?: string
-  empresa?: Empresa
+  empresa?: EstoqueScope
 }
 
 export type UserRole = 'admin' | 'user' | 'chaparia' | 'almoxarifado' | 'expedicao' | 'montagem'

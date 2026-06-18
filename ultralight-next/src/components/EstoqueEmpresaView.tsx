@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import type { Produto, Empresa, Usuario } from '@/lib/types'
+import type { Produto, Empresa, Usuario, EstoqueScope } from '@/lib/types'
+import { EMPRESAS } from '@/lib/types'
 import { useInventory } from '@/hooks/useInventory'
 import { useToast } from '@/hooks/useToast'
 
@@ -19,7 +20,7 @@ import ModalAjusteSaldo from './modals/ModalAjusteSaldo'
 type LocalTabId = 'saldo' | 'produtos' | 'historico'
 
 interface Props {
-  empresa: Empresa
+  empresa: EstoqueScope
   user: Usuario
   onBack: () => void
 }
@@ -27,6 +28,7 @@ interface Props {
 export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
   const inv = useInventory(user, empresa)
   const { toasts, toast, dismiss } = useToast()
+  const isCompany = EMPRESAS.includes(empresa as Empresa)
 
   const [tab, setTab] = useState<LocalTabId>('saldo')
 
@@ -71,7 +73,9 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
     const res = await inv.registrarSaida(produtoId, qtd, obs, responsavel, empresaDestino)
     if (!res.ok) { toast(res.error || 'Erro ao registrar saída.', 'error'); return }
     setModalSaida(false)
-    toast(`Saída de ${qtd} ${p.unidade} de "${p.nome}" registrada!`, 'success')
+    toast(empresaDestino
+      ? `Transferência de ${qtd} ${p.unidade} de "${p.nome}" para ${empresaDestino} registrada!`
+      : `Saída de ${qtd} ${p.unidade} de "${p.nome}" registrada!`, 'success')
   }
 
   async function handleSalvarProduto(dados: Omit<Produto, 'id'>, editId?: string) {
@@ -228,7 +232,8 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
       <ModalSaida
         open={modalSaida}
         produtos={inv.produtos}
-        requireDestino={false}
+        requireDestino={isCompany}
+        empresaOrigem={isCompany ? (empresa as Empresa) : undefined}
         onClose={() => setModalSaida(false)}
         onConfirm={handleConfirmarSaida}
       />
