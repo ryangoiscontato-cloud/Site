@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { Usuario, OrdemProducao } from '@/lib/types'
+import type { Usuario, OrdemProducao, Produto, ItemPedido } from '@/lib/types'
 import OrdensList from './worker/OrdensList'
 import OrdemDetail from './worker/OrdemDetail'
 import EstoqueEmpresaView from './EstoqueEmpresaView'
@@ -22,15 +22,17 @@ interface Props {
   user: Usuario
   logout: () => void
   ordens: OrdemProducao[]
+  produtos: Produto[]
   iniciarOrdem:  (id: string) => Promise<{ ok: boolean; error?: string }>
   concluirOrdem: (id: string) => Promise<{ ok: boolean; error?: string }>
   pausarOrdem:   (id: string, motivo: string) => Promise<{ ok: boolean; error?: string }>
   retomarOrdem:  (id: string) => Promise<{ ok: boolean; error?: string }>
+  atualizarItensPedido: (id: string, itensPedido: ItemPedido[]) => Promise<{ ok: boolean; error?: string }>
 }
 
 type Screen = 'menu' | 'ordens' | 'historico' | 'saldo'
 
-export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem }: Props) {
+export default function WorkerApp({ user, logout, ordens, produtos, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, atualizarItensPedido }: Props) {
   const [screen, setScreen]         = useState<Screen>(() => loadNavState().screen)
   const [selectedId, setSelectedId] = useState<string | null>(() => loadNavState().selectedId)
 
@@ -58,8 +60,11 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
       <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-contain w-9 h-9" />
-          <span className="font-extrabold text-[#0f2d5e] text-lg tracking-tight">ULTRALIGHT</span>
+          <img src="/logo.png" alt="Ultralight" width={40} height={40} className="rounded-xl object-contain w-10 h-10" />
+          <div>
+            <span className="block text-lg sm:text-[1.35rem] font-extrabold text-[#0f2d5e] leading-none tracking-tight">ULTRALIGHT</span>
+            <span className="block text-[0.6rem] sm:text-[0.65rem] text-gray-400 uppercase tracking-[0.12em] mt-0.5">Gestão de Produção</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-700">{user.username}</span>
@@ -78,11 +83,13 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
         <main className="max-w-2xl mx-auto px-4 py-6">
           <OrdemDetail
             ordem={selected}
+            produtos={produtos}
             onBack={() => setSelectedId(null)}
             onIniciar={iniciarOrdem}
             onConcluir={concluirOrdem}
             onPausar={pausarOrdem}
             onRetomar={retomarOrdem}
+            onAtualizarItens={atualizarItensPedido}
           />
         </main>
       </div>

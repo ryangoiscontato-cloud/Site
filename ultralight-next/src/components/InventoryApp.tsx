@@ -7,6 +7,7 @@ import { useInventory } from '@/hooks/useInventory'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
 import { useOrdens } from '@/hooks/useOrdens'
+import { useMetas } from '@/hooks/useMetas'
 import { isConfigured } from '@/lib/supabase'
 
 import Header       from './Header'
@@ -55,7 +56,8 @@ export default function InventoryApp() {
     produtos, historico, hydrated, error, isOnline, pendingSync,
     registrarEntrada, registrarSaida, ajustarSaldo, adicionarProduto, atualizarProduto, excluirProduto, excluirMovimento,
   } = useInventory(user)
-  const { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, excluirOrdem } = useOrdens()
+  const { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, excluirOrdem, atualizarItensPedido } = useOrdens()
+  const { metas, salvarMeta } = useMetas()
   const { toasts, toast, dismiss } = useToast()
 
   const [tab, setTab]           = useState<TabId>(() => loadNavState().tab)
@@ -181,13 +183,15 @@ export default function InventoryApp() {
 
   if (!user) return <LoginScreen onLogin={login} />
 
-  if (user.role === 'chaparia' || user.role === 'almoxarifado' || user.role === 'montagem' || user.role === 'user') {
+  if (user.role === 'chaparia' || user.role === 'almoxarifado' || user.role === 'montagem' || user.role === 'pintura' || user.role === 'user') {
     return (
       <WorkerApp
         user={user} logout={logout}
         ordens={ordens}
+        produtos={produtos}
         iniciarOrdem={iniciarOrdem} concluirOrdem={concluirOrdem}
         pausarOrdem={pausarOrdem}   retomarOrdem={retomarOrdem}
+        atualizarItensPedido={atualizarItensPedido}
       />
     )
   }
@@ -304,8 +308,8 @@ export default function InventoryApp() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png" alt="Ultralight" width={40} height={40} className="rounded-xl object-contain w-10 h-10" />
               <div>
-                <span className="block font-extrabold text-[#0f2d5e] text-lg tracking-tight leading-none">ULTRALIGHT</span>
-                <span className="block text-[0.6rem] text-gray-400 uppercase tracking-[0.12em] mt-0.5">Gestão de Produção</span>
+                <span className="block text-lg sm:text-[1.35rem] font-extrabold text-[#0f2d5e] leading-none tracking-tight">ULTRALIGHT</span>
+                <span className="block text-[0.6rem] sm:text-[0.65rem] text-gray-400 uppercase tracking-[0.12em] mt-0.5">Gestão de Produção</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -475,7 +479,7 @@ export default function InventoryApp() {
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>
         )}
         {tab === 'dashboard' && (
-          <Dashboard produtos={produtos} historico={historico} onTabChange={setTab} />
+          <Dashboard produtos={produtos} historico={historico} onTabChange={setTab} metas={metas} salvarMeta={salvarMeta} toast={toast} />
         )}
         {tab === 'saldo' && (
           <SaldoEstoque

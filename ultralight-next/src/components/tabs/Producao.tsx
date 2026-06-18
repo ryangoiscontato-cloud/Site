@@ -11,10 +11,11 @@ interface Props {
   excluirOrdem?: (id: string) => Promise<{ ok: boolean; error?: string }>
 }
 
-type Setor = 'chaparia' | 'almoxarifado' | 'montagem'
+type Setor = 'chaparia' | 'pintura' | 'almoxarifado' | 'montagem'
 
 const SETOR_INFO: Record<Setor, { label: string; dot: string; text: string; border: string }> = {
   chaparia:     { label: 'Chaparia',     dot: 'bg-blue-500',   text: 'text-blue-700',   border: 'hover:border-blue-200' },
+  pintura:      { label: 'Pintura',      dot: 'bg-pink-500',   text: 'text-pink-700',   border: 'hover:border-pink-200' },
   almoxarifado: { label: 'Almoxarifado', dot: 'bg-purple-500', text: 'text-purple-700', border: 'hover:border-purple-200' },
   montagem:     { label: 'Montagem',     dot: 'bg-teal-500',   text: 'text-teal-700',   border: 'hover:border-teal-200' },
 }
@@ -348,6 +349,7 @@ export default function Producao({ ordens, cancelarOrdem, excluirOrdem }: Props)
 
   const porSetor: Record<Setor, OrdemProducao[]> = {
     chaparia:     ordens.filter(o => o.usuarioDestino === 'CHAPARIA'),
+    pintura:      ordens.filter(o => o.usuarioDestino === 'PINTURA'),
     almoxarifado: ordens.filter(o => o.usuarioDestino === 'ALMOXARIFADO'),
     montagem:     ordens.filter(o => o.usuarioDestino === 'MONTAGEM'),
   }
@@ -356,8 +358,8 @@ export default function Producao({ ordens, cancelarOrdem, excluirOrdem }: Props)
     return (
       <div>
         <h1 className="text-2xl font-bold text-blue-900 tracking-tight mb-6">Produção</h1>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {(['chaparia', 'almoxarifado', 'montagem'] as Setor[]).map(s => (
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          {(['chaparia', 'pintura', 'almoxarifado', 'montagem'] as Setor[]).map(s => (
             <SetorCard key={s} setor={s} ordens={porSetor[s]} onSelect={setSetor} />
           ))}
         </div>

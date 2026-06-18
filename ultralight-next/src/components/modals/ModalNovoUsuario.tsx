@@ -18,6 +18,7 @@ type Tela = 'lista' | 'criar' | 'editar' | 'minha-senha' | 'confirmar-excluir'
 const ROLES: { value: UserRole; label: string }[] = [
   { value: 'user',         label: 'Funcionário' },
   { value: 'chaparia',     label: 'Chaparia' },
+  { value: 'pintura',      label: 'Pintura' },
   { value: 'almoxarifado', label: 'Almoxarifado' },
   { value: 'montagem',     label: 'Montagem' },
   { value: 'expedicao',    label: 'Expedição' },
@@ -31,6 +32,7 @@ function roleLabel(r: string) {
 function roleBadge(r: string) {
   if (r === 'admin')        return 'bg-blue-100 text-blue-700'
   if (r === 'chaparia')     return 'bg-orange-100 text-orange-700'
+  if (r === 'pintura')      return 'bg-pink-100 text-pink-700'
   if (r === 'almoxarifado') return 'bg-purple-100 text-purple-700'
   if (r === 'montagem')     return 'bg-teal-100 text-teal-700'
   if (r === 'expedicao')    return 'bg-green-100 text-green-700'

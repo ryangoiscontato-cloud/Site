@@ -1,16 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { OrdemProducao } from '@/lib/types'
+import type { OrdemProducao, Produto, ItemPedido } from '@/lib/types'
 import { fmtDate } from '@/lib/utils'
+import ItensPedidoEditor from '@/components/ItensPedidoEditor'
 
 interface Props {
   ordem: OrdemProducao
+  produtos: Produto[]
   onBack: () => void
   onIniciar:  (id: string) => Promise<{ ok: boolean; error?: string }>
   onConcluir: (id: string) => Promise<{ ok: boolean; error?: string }>
   onPausar:   (id: string, motivo: string) => Promise<{ ok: boolean; error?: string }>
   onRetomar:  (id: string) => Promise<{ ok: boolean; error?: string }>
+  onAtualizarItens: (id: string, itensPedido: ItemPedido[]) => Promise<{ ok: boolean; error?: string }>
 }
 
 function netElapsedMs(ordem: OrdemProducao): number {
@@ -49,15 +52,15 @@ function useNetTimer(ordem: OrdemProducao) {
   return ms
 }
 
-export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPausar, onRetomar }: Props) {
+export default function OrdemDetail({ ordem, produtos, onBack, onIniciar, onConcluir, onPausar, onRetomar, onAtualizarItens }: Props) {
   const [loading, setLoading]         = useState(false)
   const [error,   setError]           = useState('')
   const [showPause, setShowPause]     = useState(false)
   const [pauseMotivo, setPauseMotivo] = useState('')
 
   const ms         = useNetTimer(ordem)
-  const showTimer  = ordem.tipo === 'chaparia'
-  const isChaparia = ordem.tipo === 'chaparia'
+  const isChaparia = ordem.tipo === 'chaparia' || ordem.tipo === 'pintura'
+  const showTimer  = isChaparia
   const isAlmox    = ordem.tipo === 'almoxarifado'
 
   async function act(fn: () => Promise<{ ok: boolean; error?: string }>) {
@@ -66,6 +69,18 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
     setLoading(false)
     if (!res.ok) setError(res.error || 'Erro.')
     return res.ok
+  }
+
+  async function handleAddItem(item: ItemPedido) {
+    setError('')
+    const res = await onAtualizarItens(ordem.id, [...(ordem.itensPedido ?? []), item])
+    if (!res.ok) setError(res.error || 'Erro ao adicionar item.')
+  }
+
+  async function handleRemoveItem(i: number) {
+    setError('')
+    const res = await onAtualizarItens(ordem.id, (ordem.itensPedido ?? []).filter((_, idx) => idx !== i))
+    if (!res.ok) setError(res.error || 'Erro ao remover item.')
   }
 
   async function handlePausar() {
@@ -136,7 +151,7 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className={`px-6 py-5 border-b ${headerBg}`}>
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">
-            {ordem.tipo === 'chaparia' ? 'CHAPARIA' : 'ALMOXARIFADO'}
+            {ordem.usuarioDestino}
           </p>
           <h2 className="text-xl font-bold text-gray-900">{ordem.produtoNome}</h2>
           {ordem.pedidoNumero && (
@@ -153,18 +168,20 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Quantidade</p>
-              <p className="text-3xl font-bold text-gray-900">{ordem.quantidade}</p>
-            </div>
-            {ordem.petgQuantidade != null && (
+          {!(ordem.itensPedido && ordem.itensPedido.length > 0) && (
+            <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">PETG</p>
-                <p className="text-3xl font-bold text-gray-900">{ordem.petgQuantidade}</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Quantidade</p>
+                <p className="text-3xl font-bold text-gray-900">{ordem.quantidade}</p>
               </div>
-            )}
-          </div>
+              {ordem.petgQuantidade != null && (
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">PETG</p>
+                  <p className="text-3xl font-bold text-gray-900">{ordem.petgQuantidade}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {ordem.obs && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
@@ -173,17 +190,16 @@ export default function OrdemDetail({ ordem, onBack, onIniciar, onConcluir, onPa
             </div>
           )}
 
-          {ordem.itensPedido && ordem.itensPedido.length > 0 && (
+          {ordem.tipo === 'almoxarifado' && ordem.itensPedido && (
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Itens do Pedido</p>
-              <ul className="space-y-1.5">
-                {ordem.itensPedido.map((item, i) => (
-                  <li key={i} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5">
-                    <span className="text-sm text-gray-800 font-medium">{item.produtoNome}</span>
-                    <span className="text-sm font-bold text-gray-600">x{item.quantidade}</span>
-                  </li>
-                ))}
-              </ul>
+              <ItensPedidoEditor
+                produtos={produtos}
+                itens={ordem.itensPedido}
+                onAdd={handleAddItem}
+                onRemove={handleRemoveItem}
+                disabled={loading || ordem.status === 'concluida' || ordem.status === 'cancelada'}
+              />
             </div>
           )}
 

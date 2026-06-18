@@ -30,18 +30,24 @@
     },
     "icon": "public/logo.png",
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.business"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Office",
       "executableName": "ultralight-estoque"
     }
@@ -51,6 +57,8 @@
     "@tailwindcss/postcss": "^4",
     "@zxing/browser": "^0.2.0",
     "@zxing/library": "^0.22.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "next": "16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",

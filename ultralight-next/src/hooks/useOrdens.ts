@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { OrdemProducao, PausaOrdem } from '@/lib/types'
+import type { OrdemProducao, PausaOrdem, ItemPedido } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 import { uid } from '@/lib/utils'
 
@@ -25,6 +25,7 @@ interface OrdemRow {
   pedido_numero: string | null
   previsao_entrega: string | null
   itens_pedido: Array<{ produtoId: string; produtoNome: string; quantidade: number }> | null
+  origem_ordem_id: string | null
 }
 
 function mapOrdem(r: OrdemRow): OrdemProducao {
@@ -48,6 +49,7 @@ function mapOrdem(r: OrdemRow): OrdemProducao {
     pedidoNumero: r.pedido_numero ?? undefined,
     previsaoEntrega: r.previsao_entrega ?? undefined,
     itensPedido: r.itens_pedido ?? undefined,
+    origemOrdemId: r.origem_ordem_id ?? undefined,
   }
 }
 
@@ -90,19 +92,20 @@ export function useOrdens() {
   }, [fetchAll])
 
   const criarOrdem = useCallback(async (dados: {
-    tipo: 'chaparia' | 'almoxarifado' | 'montagem'
+    tipo: 'chaparia' | 'almoxarifado' | 'montagem' | 'pintura'
     produtoId: string
     produtoNome: string
     quantidade: number
     petgQuantidade?: number
     obs: string
     criadoPor: string
-    usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO' | 'MONTAGEM'
+    usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO' | 'MONTAGEM' | 'PINTURA'
     linha?: string
     tipoPedido?: 'estoque' | 'pedido'
     pedidoNumero?: string
     previsaoEntrega?: string
     itensPedido?: Array<{ produtoId: string; produtoNome: string; quantidade: number }>
+    origemOrdemId?: string
   }): Promise<{ ok: boolean; error?: string }> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
 
@@ -124,6 +127,7 @@ export function useOrdens() {
       pedido_numero: dados.pedidoNumero ?? null,
       previsao_entrega: dados.previsaoEntrega ?? null,
       itens_pedido: dados.itensPedido ?? null,
+      origem_ordem_id: dados.origemOrdemId ?? null,
     })
 
     if (error) return { ok: false, error: 'Erro ao criar ordem.' }
@@ -147,7 +151,7 @@ export function useOrdens() {
   const concluirOrdem = useCallback(async (id: string): Promise<{ ok: boolean; error?: string }> => {
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
 
-    const { data: row } = await supabase.from('ordens_producao').select('pausas').eq('id', id).single()
+    const { data: row } = await supabase.from('ordens_producao').select('*').eq('id', id).single()
     let pausas: PausaOrdem[] = row?.pausas ?? []
     if (pausas.length > 0 && !pausas[pausas.length - 1].fim) {
       pausas = pausas.map((p, i) =>
@@ -161,6 +165,41 @@ export function useOrdens() {
       .eq('id', id)
 
     if (error) return { ok: false, error: 'Erro ao concluir ordem.' }
+
+    // Ao concluir uma ordem de Chaparia, abre automaticamente a ordem de Pintura correspondente.
+    const ordemRow = row as OrdemRow | null
+    if (ordemRow?.tipo === 'chaparia') {
+      await supabase.from('ordens_producao').insert({
+        id: uid(),
+        tipo: 'pintura',
+        status: 'pendente',
+        produto_id: ordemRow.produto_id,
+        produto_nome: ordemRow.produto_nome,
+        quantidade: ordemRow.quantidade,
+        petg_quantidade: ordemRow.petg_quantidade,
+        obs: ordemRow.obs,
+        criado_por: ordemRow.criado_por,
+        criado_em: new Date().toISOString(),
+        usuario_destino: 'PINTURA',
+        pausas: [],
+        tipo_pedido: 'estoque',
+        origem_ordem_id: ordemRow.id,
+      })
+    }
+
+    await fetchAll()
+    return { ok: true }
+  }, [fetchAll])
+
+  const atualizarItensPedido = useCallback(async (id: string, itensPedido: ItemPedido[]): Promise<{ ok: boolean; error?: string }> => {
+    if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
+
+    const { error } = await supabase
+      .from('ordens_producao')
+      .update({ itens_pedido: itensPedido })
+      .eq('id', id)
+
+    if (error) return { ok: false, error: 'Erro ao atualizar itens.' }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
@@ -239,5 +278,5 @@ export function useOrdens() {
     return { ok: true }
   }, [fetchAll])
 
-  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, excluirOrdem, hydrated }
+  return { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, excluirOrdem, atualizarItensPedido, hydrated }
 }

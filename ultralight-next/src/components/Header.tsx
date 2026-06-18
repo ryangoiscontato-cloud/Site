@@ -27,6 +27,7 @@ export default function Header({ user, onGerenciarUsuarios, onSolicitarOP, onLog
     if (user?.role === 'admin') return 'Admin'
     if (user?.role === 'chaparia') return 'Chaparia'
     if (user?.role === 'almoxarifado') return 'Almoxarifado'
+    if (user?.role === 'pintura') return 'Pintura'
     return 'Funcionário'
   }
 

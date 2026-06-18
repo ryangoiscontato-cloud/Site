@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import type { Movimento } from '@/lib/types'
 import { fmtDate } from '@/lib/utils'
 import MovimentoDetailModal from '@/components/modals/MovimentoDetailModal'
-import PrintTransferencias from '@/components/PrintTransferencias'
+import { baixarTransferenciasPdf } from '@/lib/pdfTransferencias'
 
 interface Props {
   historico: Movimento[]
@@ -107,15 +107,8 @@ export default function Historico({ historico, onExcluir }: Props) {
     return label
   }, [preset, dateFrom, dateTo, search])
 
-  useEffect(() => {
-    function afterPrint() { document.body.classList.remove('printing-transferencias') }
-    window.addEventListener('afterprint', afterPrint)
-    return () => window.removeEventListener('afterprint', afterPrint)
-  }, [])
-
-  function handlePrint() {
-    document.body.classList.add('printing-transferencias')
-    window.print()
+  function handleBaixarPdf() {
+    baixarTransferenciasPdf(transferencias, periodoLabel)
   }
 
   const presets: { id: Preset; label: string }[] = [
@@ -133,13 +126,13 @@ export default function Historico({ historico, onExcluir }: Props) {
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <h1 className="text-xl sm:text-2xl font-bold text-blue-900 tracking-tight">Histórico de Transferências</h1>
         <button
-          onClick={handlePrint}
+          onClick={handleBaixarPdf}
           className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
         >
           <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M5 4a2 2 0 012-2h6a2 2 0 012 2v2h1a2 2 0 012 2v5a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H7a2 2 0 01-2-2v-1H4a2 2 0 01-2-2V8a2 2 0 012-2h1V4zm2 0v2h6V4H7zm0 10v2h6v-2H7zm8-1h1V8H4v5h1v-1a1 1 0 011-1h8a1 1 0 011 1v1z" clipRule="evenodd"/>
+            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm6.293-2.293a1 1 0 001.414 0l4-4a1 1 0 10-1.414-1.414L11 11.586V3a1 1 0 10-2 0v8.586L6.707 9.293a1 1 0 10-1.414 1.414l4 4z" clipRule="evenodd"/>
           </svg>
-          Imprimir transferências
+          Baixar transferências
         </button>
       </div>
 
@@ -308,8 +301,6 @@ export default function Historico({ historico, onExcluir }: Props) {
           onExcluir={onExcluir ? () => { onExcluir(selected); setSelected(null) } : undefined}
         />
       )}
-
-      <PrintTransferencias transferencias={transferencias} periodoLabel={periodoLabel} />
     </div>
   )
 }

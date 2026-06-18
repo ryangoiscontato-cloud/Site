@@ -1,24 +1,39 @@
 'use client'
 
 import { useState } from 'react'
-import type { Produto, Movimento, TabId } from '@/lib/types'
+import type { Produto, Movimento, TabId, MetaProducao } from '@/lib/types'
 import { fmtDate, todayLong } from '@/lib/utils'
 import MovimentoDetailModal from '@/components/modals/MovimentoDetailModal'
+import ModalMetas from '@/components/modals/ModalMetas'
 
 interface Props {
   produtos: Produto[]
   historico: Movimento[]
   onTabChange: (tab: TabId) => void
+  metas: MetaProducao[]
+  salvarMeta: (tier: 'basic' | 'advanced' | 'premium', mes: number, ano: number, meta: number, progresso: number) => Promise<{ ok: boolean; error?: string }>
+  toast: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void
 }
 
-export default function Dashboard({ produtos, historico, onTabChange }: Props) {
+const TIER_INFO: { value: 'basic' | 'advanced' | 'premium'; label: string; bar: string }[] = [
+  { value: 'basic',    label: 'Basic',    bar: 'bg-blue-500' },
+  { value: 'advanced', label: 'Advanced', bar: 'bg-purple-500' },
+  { value: 'premium',  label: 'Premium',  bar: 'bg-amber-500' },
+]
+
+export default function Dashboard({ produtos, historico, onTabChange, metas, salvarMeta, toast }: Props) {
   const [selected, setSelected] = useState<Movimento | null>(null)
   const [showBaixo, setShowBaixo] = useState(false)
+  const [showMetas, setShowMetas] = useState(false)
   const hoje = new Date().toDateString()
   const totalItens  = produtos.reduce((s, p) => s + p.saldo, 0)
   const baixo       = produtos.filter(p => p.saldo === 0 || (p.estoqueMin > 0 && p.saldo <= p.estoqueMin))
   const movHoje     = historico.filter(h => new Date(h.data).toDateString() === hoje)
   const recent      = [...historico].reverse().slice(0, 8)
+
+  const agora = new Date()
+  const mesAtual = agora.getMonth() + 1
+  const anoAtual = agora.getFullYear()
 
   const stats = [
     {
@@ -155,7 +170,60 @@ export default function Dashboard({ produtos, historico, onTabChange }: Props) {
         </div>
       </div>
 
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mt-4">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-semibold text-gray-900">Metas do Mês</h2>
+          <div className="flex items-center gap-2">
+            <a
+              href="/tv/metas"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-200 hover:bg-indigo-50 transition-colors"
+            >
+              Tela Cheia
+            </a>
+            <button
+              onClick={() => setShowMetas(true)}
+              className="text-xs font-semibold text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              Configurar
+            </button>
+          </div>
+        </div>
+        <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {TIER_INFO.map(t => {
+            const m = metas.find(x => x.tier === t.value && x.mes === mesAtual && x.ano === anoAtual)
+            const meta = m?.meta ?? 0
+            const progresso = m?.progresso ?? 0
+            const pct = meta > 0 ? Math.min(100, Math.round((progresso / meta) * 100)) : 0
+            return (
+              <div key={t.value} className="border border-gray-100 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-bold text-gray-800">{t.label}</p>
+                  <p className="text-xs font-semibold text-gray-400">{pct}%</p>
+                </div>
+                <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                  <div className={`h-full ${t.bar} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-xs text-gray-500">{progresso} / {meta}</p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {selected && <MovimentoDetailModal mov={selected} onClose={() => setSelected(null)} />}
+
+      <ModalMetas
+        open={showMetas}
+        metas={metas}
+        mes={mesAtual}
+        ano={anoAtual}
+        salvarMeta={salvarMeta}
+        onClose={() => setShowMetas(false)}
+        onSuccess={msg => toast(msg, 'success')}
+        onError={msg => toast(msg, 'error')}
+      />
 
       {showBaixo && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowBaixo(false)}>

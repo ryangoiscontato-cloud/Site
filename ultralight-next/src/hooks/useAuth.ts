@@ -19,6 +19,7 @@ function mapRole(role: string): UserRole {
   if (role === 'almoxarifado') return 'almoxarifado'
   if (role === 'montagem') return 'montagem'
   if (role === 'expedicao') return 'expedicao'
+  if (role === 'pintura') return 'pintura'
   return 'user'
 }
 

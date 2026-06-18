@@ -124,7 +124,7 @@ insert into usuarios (username, senha_hash, role)
 values ('EXPEDICAO', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'expedicao')
 on conflict (username) do nothing;
 
--- 12. Estoques por empresa (PESTLINE / ULTRALIGHT / UL BRASIL / ULTRA FOODS / PESTSTORE) ----
+-- 12. Estoques por empresa (PESTLINE / ULTRALIGHT / UL BRASIL / ULTRA FOODS / PESTSTORE / TECNOFLY) ----
 alter table produtos  add column if not exists empresa text not null default 'PESTLINE';
 alter table historico add column if not exists empresa text not null default 'PESTLINE';
 
@@ -138,6 +138,34 @@ alter table produtos add constraint produtos_codigo_empresa_key unique (empresa,
 insert into produtos (id, codigo, nome, categoria, unidade, estoque_min, saldo, codigo_barras, empresa)
 select gen_random_uuid()::text, p.codigo, p.nome, p.categoria, p.unidade, p.estoque_min, 0, p.codigo_barras, e.empresa
 from produtos p
-cross join (values ('ULTRALIGHT'), ('UL BRASIL'), ('ULTRA FOODS'), ('PESTSTORE')) as e(empresa)
+cross join (values ('ULTRALIGHT'), ('UL BRASIL'), ('ULTRA FOODS'), ('PESTSTORE'), ('TECNOFLY')) as e(empresa)
 where p.empresa = 'PESTLINE'
 on conflict (empresa, codigo) do nothing;
+
+-- 14. Usuário PINTURA (senha: 1234) — novo setor, mesmo layout/funcionamento da Chaparia ------
+insert into usuarios (username, senha_hash, role)
+values ('PINTURA', '25e19c46cf0ca51397c4769b754be40f494579f8761d0c0e889053ed4496ac57', 'pintura')
+on conflict (username) do nothing;
+
+-- 15. Coluna para rastrear a ordem de Chaparia que originou uma ordem de Pintura -------------
+alter table ordens_producao add column if not exists origem_ordem_id text default null;
+
+-- 16. Metas do mês (Basic / Advanced / Premium) ------------------------------------------------
+create table if not exists metas (
+  id text primary key,
+  tier text not null,
+  mes int not null,
+  ano int not null,
+  meta int not null default 0,
+  progresso int not null default 0,
+  atualizado_em timestamptz default now(),
+  unique (tier, mes, ano)
+);
+
+alter table metas disable row level security;
+
+do $$
+begin
+  alter publication supabase_realtime add table metas;
+exception when duplicate_object then null;
+end $$;

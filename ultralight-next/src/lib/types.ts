@@ -1,6 +1,6 @@
-export type Empresa = 'PESTLINE' | 'ULTRALIGHT' | 'UL BRASIL' | 'ULTRA FOODS' | 'PESTSTORE'
+export type Empresa = 'PESTLINE' | 'ULTRALIGHT' | 'UL BRASIL' | 'ULTRA FOODS' | 'PESTSTORE' | 'TECNOFLY'
 
-export const EMPRESAS: Empresa[] = ['PESTLINE', 'ULTRALIGHT', 'UL BRASIL', 'ULTRA FOODS', 'PESTSTORE']
+export const EMPRESAS: Empresa[] = ['PESTLINE', 'ULTRALIGHT', 'UL BRASIL', 'ULTRA FOODS', 'PESTSTORE', 'TECNOFLY']
 
 // Escopos de estoque que não são empresas (ex.: estoque interno de materiais do Almoxarifado).
 export type EstoqueScope = Empresa | 'ALMOXARIFADO'
@@ -17,7 +17,7 @@ export interface Produto {
   empresa?: EstoqueScope
 }
 
-export type UserRole = 'admin' | 'user' | 'chaparia' | 'almoxarifado' | 'expedicao' | 'montagem'
+export type UserRole = 'admin' | 'user' | 'chaparia' | 'almoxarifado' | 'expedicao' | 'montagem' | 'pintura'
 
 export interface Usuario {
   id: string
@@ -54,7 +54,7 @@ export interface ItemPedido {
 
 export interface OrdemProducao {
   id: string
-  tipo: 'chaparia' | 'almoxarifado' | 'montagem'
+  tipo: 'chaparia' | 'almoxarifado' | 'montagem' | 'pintura'
   status: 'pendente' | 'em_producao' | 'pausada' | 'concluida' | 'cancelada'
   produtoId: string
   produtoNome: string
@@ -70,8 +70,19 @@ export interface OrdemProducao {
   criadoEm: string
   iniciadoEm?: string
   concluidoEm?: string
-  usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO' | 'MONTAGEM'
+  usuarioDestino: 'CHAPARIA' | 'ALMOXARIFADO' | 'MONTAGEM' | 'PINTURA'
   pausas: PausaOrdem[]
+  origemOrdemId?: string
+}
+
+export interface MetaProducao {
+  id: string
+  tier: 'basic' | 'advanced' | 'premium'
+  mes: number
+  ano: number
+  meta: number
+  progresso: number
+  atualizadoEm: string
 }
 
 export type TabId = 'dashboard' | 'saldo' | 'produtos' | 'historico' | 'producao'
