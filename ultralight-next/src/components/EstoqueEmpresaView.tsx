@@ -133,41 +133,43 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
       </header>
 
       {/* Breadcrumb / action bar */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2.5 flex items-center justify-between">
-        <nav className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`px-3.5 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
-                tab === t.id
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-gray-500 hover:text-blue-600'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          <nav className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`px-3.5 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
+                  tab === t.id
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-gray-500 hover:text-blue-600'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
 
-        {(tab === 'saldo' || tab === 'historico') && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleEntrada}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
-              Entrada
-            </button>
-            <button
-              onClick={handleSaida}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
-              Saída
-            </button>
-          </div>
-        )}
+          {(tab === 'saldo' || tab === 'historico') && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={handleEntrada}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
+                Entrada
+              </button>
+              <button
+                onClick={handleSaida}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
+                Saída
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Offline banner */}

@@ -403,38 +403,40 @@ export default function InventoryApp() {
       )}
 
       {user.role === 'admin' && (
-        <div className="bg-white border-b border-gray-100 px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowHome(true)}
-              className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-              </svg>
-              Início
-            </button>
-            <span className="text-gray-300">›</span>
-            <span className="text-sm text-gray-500 font-medium">{tabLabel}</span>
-          </div>
-          {(tab === 'saldo' || tab === 'historico') && (
-            <div className="flex items-center gap-2">
+        <div className="bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <button
-                onClick={handleEntrada}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                onClick={() => setShowHome(true)}
+                className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold flex-shrink-0"
               >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
-                Entrada
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                </svg>
+                Início
               </button>
-              <button
-                onClick={handleSaida}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
-                Saída
-              </button>
+              <span className="text-gray-300">›</span>
+              <span className="text-sm text-gray-500 font-medium truncate">{tabLabel}</span>
             </div>
-          )}
+            {(tab === 'saldo' || tab === 'historico') && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={handleEntrada}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
+                  Entrada
+                </button>
+                <button
+                  onClick={handleSaida}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
+                  Saída
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
