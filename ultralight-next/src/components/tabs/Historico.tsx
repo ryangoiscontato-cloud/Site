@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { Movimento } from '@/lib/types'
 import { fmtDate } from '@/lib/utils'
 import MovimentoDetailModal from '@/components/modals/MovimentoDetailModal'
+import PrintTransferencias from '@/components/PrintTransferencias'
 
 interface Props {
   historico: Movimento[]
@@ -16,6 +17,16 @@ function localISODate(d: Date): string {
   // yyyy-mm-dd in local time (avoids UTC off-by-one)
   const tz = d.getTimezoneOffset() * 60000
   return new Date(d.getTime() - tz).toISOString().slice(0, 10)
+}
+
+function fmtDateOnly(iso: string): string {
+  const [y, m, d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
+
+const PRESET_LABELS: Record<Preset, string> = {
+  hoje: 'Hoje', ontem: 'Ontem', '7dias': 'Últimos 7 dias', mes: 'Este mês',
+  ano: 'Este ano', todos: 'Todo o período', personalizado: 'Personalizado',
 }
 
 export default function Historico({ historico, onExcluir }: Props) {
@@ -83,6 +94,30 @@ export default function Historico({ historico, onExcluir }: Props) {
     setSearch(''); setTipo(''); setPreset('todos'); setDateFrom(''); setDateTo('')
   }
 
+  const transferencias = useMemo(
+    () => filtered.filter(h => h.tipo === 'saida' && h.empresaDestino),
+    [filtered]
+  )
+
+  const periodoLabel = useMemo(() => {
+    let label = preset === 'personalizado' && dateFrom && dateTo
+      ? `${fmtDateOnly(dateFrom)} até ${fmtDateOnly(dateTo)}`
+      : PRESET_LABELS[preset]
+    if (search.trim()) label += ` · Produto: "${search.trim()}"`
+    return label
+  }, [preset, dateFrom, dateTo, search])
+
+  useEffect(() => {
+    function afterPrint() { document.body.classList.remove('printing-transferencias') }
+    window.addEventListener('afterprint', afterPrint)
+    return () => window.removeEventListener('afterprint', afterPrint)
+  }, [])
+
+  function handlePrint() {
+    document.body.classList.add('printing-transferencias')
+    window.print()
+  }
+
   const presets: { id: Preset; label: string }[] = [
     { id: 'hoje',          label: 'Hoje' },
     { id: 'ontem',         label: 'Ontem' },
@@ -96,7 +131,16 @@ export default function Historico({ historico, onExcluir }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-blue-900 tracking-tight">Histórico de Movimentos</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-blue-900 tracking-tight">Histórico de Transferências</h1>
+        <button
+          onClick={handlePrint}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5 4a2 2 0 012-2h6a2 2 0 012 2v2h1a2 2 0 012 2v5a2 2 0 01-2 2h-1v1a2 2 0 01-2 2H7a2 2 0 01-2-2v-1H4a2 2 0 01-2-2V8a2 2 0 012-2h1V4zm2 0v2h6V4H7zm0 10v2h6v-2H7zm8-1h1V8H4v5h1v-1a1 1 0 011-1h8a1 1 0 011 1v1z" clipRule="evenodd"/>
+          </svg>
+          Imprimir transferências
+        </button>
       </div>
 
       {/* Totals */}
@@ -264,6 +308,8 @@ export default function Historico({ historico, onExcluir }: Props) {
           onExcluir={onExcluir ? () => { onExcluir(selected); setSelected(null) } : undefined}
         />
       )}
+
+      <PrintTransferencias transferencias={transferencias} periodoLabel={periodoLabel} />
     </div>
   )
 }

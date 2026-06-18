@@ -344,7 +344,7 @@ export default function InventoryApp() {
               { tab: 'produtos' as TabId, label: 'Produtos', sub: 'Gerenciar cadastro', color: 'bg-indigo-100 text-indigo-600', icon: (
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 4v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               )},
-              { tab: 'historico' as TabId, label: 'Histórico', sub: 'Movimentações', color: 'bg-green-100 text-green-600', icon: (
+              { tab: 'historico' as TabId, label: 'Histórico', sub: 'Transferências', color: 'bg-green-100 text-green-600', icon: (
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               )},
               { tab: 'producao' as TabId, label: 'Produção', sub: 'Ordens de produção', color: 'bg-orange-100 text-orange-600', icon: (
