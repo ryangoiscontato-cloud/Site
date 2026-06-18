@@ -7,6 +7,22 @@ interface Props {
   produtos: Produto[]
   titulo?: string
   onScanFound?: (produto: Produto) => void
+  onAjustar?: (produto: Produto) => void
+}
+
+function AjustarBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Ajustar saldo"
+      className="flex items-center gap-1 text-xs font-semibold text-blue-700 px-2 py-1 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors flex-shrink-0"
+    >
+      <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+      </svg>
+      Ajustar
+    </button>
+  )
 }
 
 function StatusBadge({ p }: { p: Produto }) {
@@ -86,7 +102,7 @@ function ModalEstoqueBaixo({ open, produtos, onClose }: { open: boolean; produto
   )
 }
 
-export default function SaldoEstoque({ produtos, titulo = 'Saldo de Estoque Pestline', onScanFound }: Props) {
+export default function SaldoEstoque({ produtos, titulo = 'Saldo de Estoque Pestline', onScanFound, onAjustar }: Props) {
   const [search, setSearch]             = useState('')
   const [catFilter, setCat]             = useState('')
   const [highlight, setHighlight]       = useState<string | null>(null)
@@ -245,6 +261,7 @@ export default function SaldoEstoque({ produtos, titulo = 'Saldo de Estoque Pest
                       {p.saldo} <span className="text-xs font-normal text-gray-400">{p.unidade}</span>
                       {p.estoqueMin > 0 && <span className="text-xs font-normal text-gray-400 ml-1">| mín: {p.estoqueMin}</span>}
                     </p>
+                    {onAjustar && <AjustarBtn onClick={() => onAjustar(p)} />}
                   </div>
                 </div>
               </div>
@@ -264,6 +281,7 @@ export default function SaldoEstoque({ produtos, titulo = 'Saldo de Estoque Pest
                     <th className="px-4 py-3 text-left font-semibold">Est. Mín.</th>
                     <th className="px-4 py-3 text-left font-semibold">Saldo</th>
                     <th className="px-4 py-3 text-left font-semibold">Status</th>
+                    {onAjustar && <th className="px-4 py-3 text-left font-semibold"></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -287,6 +305,11 @@ export default function SaldoEstoque({ produtos, titulo = 'Saldo de Estoque Pest
                       <td className="px-4 py-3">
                         <StatusBadge p={p} />
                       </td>
+                      {onAjustar && (
+                        <td className="px-4 py-3">
+                          <AjustarBtn onClick={() => onAjustar(p)} />
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

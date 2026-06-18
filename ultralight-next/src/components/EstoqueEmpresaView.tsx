@@ -10,10 +10,11 @@ import SaldoEstoque  from './tabs/SaldoEstoque'
 import Produtos      from './tabs/Produtos'
 import Historico      from './tabs/Historico'
 
-import ModalEntrada from './modals/ModalEntrada'
-import ModalSaida   from './modals/ModalSaida'
-import ModalProduto from './modals/ModalProduto'
-import ModalConfirm from './modals/ModalConfirm'
+import ModalEntrada     from './modals/ModalEntrada'
+import ModalSaida       from './modals/ModalSaida'
+import ModalProduto     from './modals/ModalProduto'
+import ModalConfirm     from './modals/ModalConfirm'
+import ModalAjusteSaldo from './modals/ModalAjusteSaldo'
 
 type LocalTabId = 'saldo' | 'produtos' | 'historico'
 
@@ -37,6 +38,9 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
 
   const [modalExcluir,   setModalExcluir]   = useState(false)
   const [produtoExcluir, setProdutoExcluir] = useState<Produto | null>(null)
+
+  const [modalAjuste,   setModalAjuste]   = useState(false)
+  const [produtoAjuste, setProdutoAjuste] = useState<Produto | null>(null)
 
   const codigosExistentes = inv.produtos.map(p => p.codigo)
   const categorias = useMemo(
@@ -93,6 +97,14 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
     setProdutoExcluir(null)
   }
 
+  async function handleConfirmarAjuste(produtoId: string, novoSaldo: number, obs: string) {
+    const res = await inv.ajustarSaldo(produtoId, novoSaldo, obs)
+    if (!res.ok) { toast(res.error || 'Erro ao ajustar saldo.', 'error'); return }
+    toast('Saldo atualizado!', 'success')
+    setModalAjuste(false)
+    setProdutoAjuste(null)
+  }
+
   if (!inv.hydrated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -134,13 +146,13 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
 
       {/* Breadcrumb / action bar */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-          <nav className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <nav className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto max-w-full">
             {tabs.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`px-3.5 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-3.5 py-1.5 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                   tab === t.id
                     ? 'bg-white text-blue-700 shadow-sm'
                     : 'text-gray-500 hover:text-blue-600'
@@ -155,16 +167,16 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={handleEntrada}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                className="flex flex-1 sm:flex-none items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors whitespace-nowrap"
               >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
+                <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>
                 Entrada
               </button>
               <button
                 onClick={handleSaida}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                className="flex flex-1 sm:flex-none items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors whitespace-nowrap"
               >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
+                <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
                 Saída
               </button>
             </div>
@@ -190,7 +202,11 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
         )}
 
         {tab === 'saldo' && (
-          <SaldoEstoque produtos={inv.produtos} titulo={`Saldo de Estoque ${empresa}`} />
+          <SaldoEstoque
+            produtos={inv.produtos}
+            titulo={`Saldo de Estoque ${empresa}`}
+            onAjustar={p => { setProdutoAjuste(p); setModalAjuste(true) }}
+          />
         )}
         {tab === 'produtos' && (
           <Produtos
@@ -230,6 +246,12 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
         message={produtoExcluir ? `Tem certeza que deseja excluir "${produtoExcluir.nome}"? O histórico de movimentos será mantido.` : ''}
         onClose={() => { setModalExcluir(false); setProdutoExcluir(null) }}
         onConfirm={handleExcluirConfirm}
+      />
+      <ModalAjusteSaldo
+        open={modalAjuste}
+        produto={produtoAjuste}
+        onClose={() => { setModalAjuste(false); setProdutoAjuste(null) }}
+        onConfirm={handleConfirmarAjuste}
       />
 
       <Toast toasts={toasts} dismiss={dismiss} />

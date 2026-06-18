@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { Produto, TabId, Empresa } from '@/lib/types'
 import { EMPRESAS } from '@/lib/types'
 import { useInventory } from '@/hooks/useInventory'
@@ -30,6 +30,25 @@ import ModalNovoUsuario from './modals/ModalNovoUsuario'
 import ModalSolicitarOP from './modals/ModalSolicitarOP'
 import ModalAjusteSaldo from './modals/ModalAjusteSaldo'
 
+const NAV_KEY = 'ul_nav_state'
+
+interface NavState {
+  tab: TabId
+  showHome: boolean
+  showEstoques: boolean
+  empresaSelecionada: Empresa | null
+}
+
+function loadNavState(): NavState {
+  const fallback: NavState = { tab: 'dashboard', showHome: true, showEstoques: false, empresaSelecionada: null }
+  if (typeof window === 'undefined') return fallback
+  try {
+    const raw = localStorage.getItem(NAV_KEY)
+    if (raw) return { ...fallback, ...JSON.parse(raw) }
+  } catch {}
+  return fallback
+}
+
 export default function InventoryApp() {
   const { user, loading: authLoading, login, logout, criarUsuario, alterarUsuario, excluirUsuario, usuarios } = useAuth()
   const {
@@ -39,10 +58,19 @@ export default function InventoryApp() {
   const { ordens, criarOrdem, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem, cancelarOrdem, excluirOrdem } = useOrdens()
   const { toasts, toast, dismiss } = useToast()
 
-  const [tab, setTab]           = useState<TabId>('dashboard')
-  const [showHome, setShowHome] = useState(true)
-  const [showEstoques, setShowEstoques] = useState(false)
-  const [empresaSelecionada, setEmpresaSelecionada] = useState<Empresa | null>(null)
+  const [tab, setTab]           = useState<TabId>(() => loadNavState().tab)
+  const [showHome, setShowHome] = useState(() => loadNavState().showHome)
+  const [showEstoques, setShowEstoques] = useState(() => loadNavState().showEstoques)
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<Empresa | null>(() => loadNavState().empresaSelecionada)
+
+  useEffect(() => {
+    try { localStorage.setItem(NAV_KEY, JSON.stringify({ tab, showHome, showEstoques, empresaSelecionada })) } catch {}
+  }, [tab, showHome, showEstoques, empresaSelecionada])
+
+  function handleLogout() {
+    try { localStorage.removeItem(NAV_KEY) } catch {}
+    logout()
+  }
 
   const [modalEntrada,   setModalEntrada]   = useState(false)
   const [modalSaida,     setModalSaida]     = useState(false)
@@ -220,7 +248,7 @@ export default function InventoryApp() {
     return (
       <div className="min-h-screen bg-gray-100">
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-          <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowEstoques(false)}
@@ -271,7 +299,7 @@ export default function InventoryApp() {
     return (
       <div className="min-h-screen bg-gray-100">
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-          <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png" alt="Ultralight" width={40} height={40} className="rounded-xl object-contain w-10 h-10" />
@@ -291,7 +319,7 @@ export default function InventoryApp() {
                 </button>
               )}
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="text-xs text-red-600 font-semibold px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors"
               >
                 Sair
@@ -394,7 +422,7 @@ export default function InventoryApp() {
         user={user}
         onGerenciarUsuarios={() => setModalUsuario(true)}
         onSolicitarOP={() => setModalOP(true)}
-        onLogout={logout}
+        onLogout={handleLogout}
         onHome={user.role === 'admin' ? () => setShowHome(true) : undefined}
       />
 
@@ -454,6 +482,7 @@ export default function InventoryApp() {
             produtos={produtos}
             titulo="Saldo de Estoque Pestline"
             onScanFound={p => { setProdutoAjuste(p); setModalAjuste(true) }}
+            onAjustar={p => { setProdutoAjuste(p); setModalAjuste(true) }}
           />
         )}
         {tab === 'produtos' && (

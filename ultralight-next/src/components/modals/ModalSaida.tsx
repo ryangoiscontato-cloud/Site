@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Produto } from '@/lib/types'
+import { EMPRESAS } from '@/lib/types'
 import ProductSearchSelect from '@/components/ProductSearchSelect'
 
-const EMPRESAS = ['ULTRALIGHT', 'TECNOFLY', 'UL BRASIL', 'ULTRAFOODS', 'PESTSTORE']
+const EMPRESAS_DESTINO = EMPRESAS.filter(e => e !== 'PESTLINE')
 
 interface Props {
   open: boolean
@@ -183,7 +184,7 @@ export default function ModalSaida({ open, produtos, presetProdutoId, requireDes
                 className={`form-field ${errors.empresaDestino ? 'border-red-400 ring-2 ring-red-100' : ''}`}
               >
                 <option value="">— Selecione a empresa —</option>
-                {EMPRESAS.map(e => <option key={e} value={e}>{e}</option>)}
+                {EMPRESAS_DESTINO.map(e => <option key={e} value={e}>{e}</option>)}
               </select>
               {errors.empresaDestino && <p className="field-error">{errors.empresaDestino}</p>}
             </div>

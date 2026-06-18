@@ -1,9 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Usuario, OrdemProducao } from '@/lib/types'
 import OrdensList from './worker/OrdensList'
 import OrdemDetail from './worker/OrdemDetail'
+
+const NAV_KEY = 'ul_worker_nav_state'
+
+function loadNavState(): { screen: Screen; selectedId: string | null } {
+  const fallback: { screen: Screen; selectedId: string | null } = { screen: 'menu', selectedId: null }
+  if (typeof window === 'undefined') return fallback
+  try {
+    const raw = localStorage.getItem(NAV_KEY)
+    if (raw) return { ...fallback, ...JSON.parse(raw) }
+  } catch {}
+  return fallback
+}
 
 interface Props {
   user: Usuario
@@ -18,8 +30,17 @@ interface Props {
 type Screen = 'menu' | 'ordens' | 'historico'
 
 export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluirOrdem, pausarOrdem, retomarOrdem }: Props) {
-  const [screen, setScreen]         = useState<Screen>('menu')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [screen, setScreen]         = useState<Screen>(() => loadNavState().screen)
+  const [selectedId, setSelectedId] = useState<string | null>(() => loadNavState().selectedId)
+
+  useEffect(() => {
+    try { localStorage.setItem(NAV_KEY, JSON.stringify({ screen, selectedId })) } catch {}
+  }, [screen, selectedId])
+
+  function handleLogout() {
+    try { localStorage.removeItem(NAV_KEY) } catch {}
+    logout()
+  }
 
   const isAlmox    = user.role === 'almoxarifado'
   const isMontagem = user.role === 'montagem'
@@ -33,23 +54,15 @@ export default function WorkerApp({ user, logout, ordens, iniciarOrdem, concluir
 
   const WorkerHeader = () => (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Ultralight" width={36} height={36} className="rounded-xl object-contain w-9 h-9" />
           <span className="font-extrabold text-[#0f2d5e] text-lg tracking-tight">ULTRALIGHT</span>
         </div>
         <div className="flex items-center gap-2">
-          {screen !== 'menu' && !selected && (
-            <button
-              onClick={() => setScreen('menu')}
-              className="text-xs text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
-            >
-              Menu
-            </button>
-          )}
           <span className="text-sm font-semibold text-gray-700">{user.username}</span>
-          <button onClick={logout} className="text-xs text-red-600 font-semibold px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">
+          <button onClick={handleLogout} className="text-xs text-red-600 font-semibold px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">
             Sair
           </button>
         </div>

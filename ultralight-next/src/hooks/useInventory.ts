@@ -272,6 +272,24 @@ export function useInventory(currentUser: Usuario | null, empresa: Empresa = 'PE
     if (e2) return { ok: false, error: 'Erro ao registrar movimento. Tente novamente.' }
 
     setProdutos(prev => prev.map(p => p.id === produtoId ? { ...p, saldo: novoSaldo } : p))
+
+    // Credita automaticamente o saldo da empresa de destino (cada empresa tem seu próprio saldo).
+    if (empresaDestino && empresaDestino !== empresa && EMPRESAS.includes(empresaDestino as Empresa)) {
+      const { data: destRow } = await supabase
+        .from('produtos').select('id, saldo')
+        .eq('empresa', empresaDestino).eq('codigo', produto.codigo)
+        .maybeSingle()
+      if (destRow) {
+        const destSaldo = (destRow as { id: string; saldo: number }).saldo + qtd
+        await supabase.from('produtos').update({ saldo: destSaldo }).eq('id', destRow.id)
+        await supabase.from('historico').insert({
+          id: uid(), produto_id: destRow.id, produto_nome: produto.nome, tipo: 'entrada',
+          qtd, obs: obs || `Recebido de ${empresa}`, data: new Date().toISOString(),
+          usuario_id: u?.id ?? null, usuario_nome: u?.username ?? null, empresa: empresaDestino,
+        })
+      }
+    }
+
     return { ok: true }
   }, [produtos, empresa, queueKey])
 

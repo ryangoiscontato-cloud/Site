@@ -20,7 +20,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="h-full">
+    <html lang="pt-BR" className="h-full" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if (navigator.userAgent.includes('Electron')) document.documentElement.classList.add('electron-app');`,
+          }}
+        />
+      </head>
       <body className="min-h-full bg-gray-100">{children}</body>
     </html>
   );
