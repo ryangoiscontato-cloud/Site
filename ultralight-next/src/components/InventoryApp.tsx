@@ -481,7 +481,7 @@ export default function InventoryApp() {
           <SaldoEstoque
             produtos={produtos}
             titulo="Saldo de Estoque Pestline"
-            onScanFound={p => { setProdutoAjuste(p); setModalAjuste(true) }}
+            onScanFound={p => { if (!modalEntrada && !modalSaida) { setProdutoAjuste(p); setModalAjuste(true) } }}
             onAjustar={p => { setProdutoAjuste(p); setModalAjuste(true) }}
           />
         )}
