@@ -130,7 +130,7 @@ export function useOrdens() {
       origem_ordem_id: dados.origemOrdemId ?? null,
     })
 
-    if (error) return { ok: false, error: 'Erro ao criar ordem.' }
+    if (error) return { ok: false, error: `Erro ao criar ordem: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
@@ -143,7 +143,7 @@ export function useOrdens() {
       .update({ status: 'em_producao', iniciado_em: new Date().toISOString() })
       .eq('id', id)
 
-    if (error) return { ok: false, error: 'Erro ao iniciar ordem.' }
+    if (error) return { ok: false, error: `Erro ao iniciar ordem: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
@@ -164,7 +164,7 @@ export function useOrdens() {
       .update({ status: 'concluida', concluido_em: new Date().toISOString(), pausas })
       .eq('id', id)
 
-    if (error) return { ok: false, error: 'Erro ao concluir ordem.' }
+    if (error) return { ok: false, error: `Erro ao concluir ordem: ${error.message}` }
 
     // Ao concluir uma ordem de Chaparia, abre automaticamente a ordem de Pintura correspondente.
     const ordemRow = row as OrdemRow | null
@@ -199,7 +199,7 @@ export function useOrdens() {
       .update({ itens_pedido: itensPedido })
       .eq('id', id)
 
-    if (error) return { ok: false, error: 'Erro ao atualizar itens.' }
+    if (error) return { ok: false, error: `Erro ao atualizar itens: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
@@ -213,7 +213,7 @@ export function useOrdens() {
       .eq('id', id)
       .single()
 
-    if (fetchErr) return { ok: false, error: 'Erro ao buscar ordem.' }
+    if (fetchErr) return { ok: false, error: `Erro ao buscar ordem: ${fetchErr.message}` }
 
     const pausas: PausaOrdem[] = [
       ...(row?.pausas ?? []),
@@ -225,7 +225,7 @@ export function useOrdens() {
       .update({ status: 'pausada', pausas })
       .eq('id', id)
 
-    if (error) return { ok: false, error: 'Erro ao pausar ordem.' }
+    if (error) return { ok: false, error: `Erro ao pausar ordem: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
@@ -239,7 +239,7 @@ export function useOrdens() {
       .eq('id', id)
       .single()
 
-    if (fetchErr) return { ok: false, error: 'Erro ao buscar ordem.' }
+    if (fetchErr) return { ok: false, error: `Erro ao buscar ordem: ${fetchErr.message}` }
 
     const pausas: PausaOrdem[] = (row?.pausas ?? []).map((p: PausaOrdem, i: number, arr: PausaOrdem[]) =>
       i === arr.length - 1 && !p.fim ? { ...p, fim: new Date().toISOString() } : p
@@ -250,7 +250,7 @@ export function useOrdens() {
       .update({ status: 'em_producao', pausas })
       .eq('id', id)
 
-    if (error) return { ok: false, error: 'Erro ao retomar ordem.' }
+    if (error) return { ok: false, error: `Erro ao retomar ordem: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
@@ -263,7 +263,7 @@ export function useOrdens() {
       .update({ status: 'cancelada' })
       .eq('id', id)
 
-    if (error) return { ok: false, error: 'Erro ao cancelar ordem.' }
+    if (error) return { ok: false, error: `Erro ao cancelar ordem: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
@@ -273,7 +273,7 @@ export function useOrdens() {
 
     const { error } = await supabase.from('ordens_producao').delete().eq('id', id)
 
-    if (error) return { ok: false, error: 'Erro ao excluir ordem.' }
+    if (error) return { ok: false, error: `Erro ao excluir ordem: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [fetchAll])
