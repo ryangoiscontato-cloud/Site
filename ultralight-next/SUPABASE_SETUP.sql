@@ -169,3 +169,16 @@ begin
   alter publication supabase_realtime add table metas;
 exception when duplicate_object then null;
 end $$;
+
+-- 17. Garante que a TECNOFLY tenha o mesmo catálogo de produtos das demais empresas ----------
+-- (cobre produtos cadastrados em qualquer empresa, não só a Pestline; saldo novo inicia em 0;
+--  execução idempotente — pode ser rodado quantas vezes for preciso)
+insert into produtos (id, codigo, nome, categoria, unidade, estoque_min, saldo, codigo_barras, empresa)
+select gen_random_uuid()::text, d.codigo, d.nome, d.categoria, d.unidade, d.estoque_min, 0, d.codigo_barras, 'TECNOFLY'
+from (
+  select distinct on (codigo) codigo, nome, categoria, unidade, estoque_min, codigo_barras
+  from produtos
+  where empresa <> 'TECNOFLY'
+  order by codigo, nome
+) d
+on conflict (empresa, codigo) do nothing;

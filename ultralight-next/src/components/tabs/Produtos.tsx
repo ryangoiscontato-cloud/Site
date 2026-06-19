@@ -18,6 +18,7 @@ function StatusBadge({ p }: { p: Produto }) {
 
 export default function Produtos({ produtos, onNovo, onEditar, onExcluir }: Props) {
   const [search, setSearch] = useState('')
+  const [catFilter, setCat] = useState('')
 
   const produtosRef = useRef<Produto[]>(produtos)
   useEffect(() => { produtosRef.current = produtos }, [produtos])
@@ -52,15 +53,22 @@ export default function Produtos({ produtos, onNovo, onEditar, onExcluir }: Prop
     return () => document.removeEventListener('keydown', onKey)
   }, []) // empty deps, uses refs
 
+  const categorias = useMemo(
+    () => [...new Set(produtos.map(p => p.categoria).filter(Boolean))],
+    [produtos]
+  )
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return produtos
-    return produtos.filter(p =>
-      p.nome.toLowerCase().includes(q) ||
-      p.codigo.toLowerCase().includes(q) ||
-      (p.categoria || '').toLowerCase().includes(q)
-    )
-  }, [produtos, search])
+    return produtos.filter(p => {
+      const matchSearch = !q
+        || p.nome.toLowerCase().includes(q)
+        || p.codigo.toLowerCase().includes(q)
+        || (p.categoria || '').toLowerCase().includes(q)
+      const matchCat = !catFilter || p.categoria === catFilter
+      return matchSearch && matchCat
+    })
+  }, [produtos, search, catFilter])
 
   const qtyColor = (p: Produto) => {
     if (p.saldo === 0) return 'text-red-600 font-bold'
@@ -113,6 +121,17 @@ export default function Produtos({ produtos, onNovo, onEditar, onExcluir }: Prop
             </button>
           )}
         </div>
+
+        {/* Category filter */}
+        <select
+          value={catFilter}
+          onChange={e => setCat(e.target.value)}
+          className="select-field flex-shrink-0"
+        >
+          <option value="">Todas as categorias</option>
+          {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+
         <span className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-1 flex-shrink-0">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -134,7 +153,9 @@ export default function Produtos({ produtos, onNovo, onEditar, onExcluir }: Prop
           <svg className="w-10 h-10 text-gray-200" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
           </svg>
-          <p className="text-sm">Nenhum produto encontrado para &ldquo;{search}&rdquo;</p>
+          <p className="text-sm">
+            {search ? <>Nenhum produto encontrado para &ldquo;{search}&rdquo;</> : 'Nenhum produto encontrado para esse filtro'}
+          </p>
         </div>
       ) : (
         <>

@@ -28,7 +28,15 @@ export default function TvMetasPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#0a0e1a] text-white flex flex-col items-center justify-center px-10 py-12">
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 flex flex-col items-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Ultralight"
+          width={96}
+          height={96}
+          className="w-24 h-24 rounded-3xl object-contain mb-5 shadow-[0_0_40px_rgba(99,102,241,0.45)]"
+        />
         <p className="text-indigo-400 text-xl font-bold uppercase tracking-[0.3em] mb-2">Ultralight · Gestão de Produção</p>
         <h1 className="text-6xl font-black tracking-tight">METAS DO MÊS</h1>
         <p className="text-2xl text-gray-400 font-medium mt-3 capitalize">{MESES[mesAtual - 1]} de {anoAtual}</p>

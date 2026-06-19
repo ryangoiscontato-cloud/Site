@@ -47,7 +47,13 @@ export default function WorkerApp({ user, logout, ordens, produtos, iniciarOrdem
 
   const isAlmox    = user.role === 'almoxarifado'
   const isMontagem = user.role === 'montagem'
-  const dest     = user.username.toUpperCase()
+  const ROLE_DESTINO: Record<string, string> = {
+    chaparia: 'CHAPARIA',
+    almoxarifado: 'ALMOXARIFADO',
+    montagem: 'MONTAGEM',
+    pintura: 'PINTURA',
+  }
+  const dest     = ROLE_DESTINO[user.role] ?? user.username.toUpperCase()
   const minhas   = ordens.filter(o => o.usuarioDestino === dest)
   const selected = selectedId ? ordens.find(o => o.id === selectedId) ?? null : null
   const pendentes = minhas.filter(o => o.status !== 'concluida').length

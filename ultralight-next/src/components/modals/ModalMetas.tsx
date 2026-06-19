@@ -21,17 +21,22 @@ const TIERS: { value: 'basic' | 'advanced' | 'premium'; label: string }[] = [
 ]
 
 export default function ModalMetas({ open, metas, mes, ano, salvarMeta, onClose, onSuccess, onError }: Props) {
-  const [form, setForm] = useState<Record<string, { meta: string; progresso: string }>>({})
+  const [metaForm, setMetaForm] = useState<Record<string, string>>({})
+  const [progresso, setProgresso] = useState('0')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    const next: Record<string, { meta: string; progresso: string }> = {}
+    const nextMeta: Record<string, string> = {}
     for (const t of TIERS) {
       const existente = metas.find(m => m.tier === t.value && m.mes === mes && m.ano === ano)
-      next[t.value] = { meta: String(existente?.meta ?? 0), progresso: String(existente?.progresso ?? 0) }
+      nextMeta[t.value] = String(existente?.meta ?? 0)
     }
-    setForm(next)
+    setMetaForm(nextMeta)
+
+    // A produção atual é a mesma para as 3 metas — usa o maior progresso já registrado.
+    const maiorProgresso = Math.max(0, ...metas.filter(m => m.mes === mes && m.ano === ano).map(m => m.progresso))
+    setProgresso(String(maiorProgresso))
   }, [open, metas, mes, ano])
 
   useEffect(() => {
@@ -44,11 +49,10 @@ export default function ModalMetas({ open, metas, mes, ano, salvarMeta, onClose,
 
   async function handleSalvar() {
     setLoading(true)
+    const progressoNum = Number(progresso) || 0
     for (const t of TIERS) {
-      const vals = form[t.value]
-      const meta = Number(vals?.meta ?? 0)
-      const progresso = Number(vals?.progresso ?? 0)
-      const res = await salvarMeta(t.value, mes, ano, meta, progresso)
+      const meta = Number(metaForm[t.value] ?? 0)
+      const res = await salvarMeta(t.value, mes, ano, meta, progressoNum)
       if (!res.ok) {
         setLoading(false)
         onError(res.error || 'Erro ao salvar metas.')
@@ -77,31 +81,28 @@ export default function ModalMetas({ open, metas, mes, ano, salvarMeta, onClose,
         </div>
 
         <div className="px-6 py-5 space-y-4">
+          <div className="border border-indigo-200 bg-indigo-50 rounded-xl p-4">
+            <label className="field-label">Produção atual</label>
+            <input
+              type="number"
+              min="0"
+              value={progresso}
+              onChange={e => setProgresso(e.target.value)}
+              className="form-field"
+            />
+            <p className="text-xs text-gray-500 mt-1.5">Vale para as 3 metas — não precisa informar uma por uma.</p>
+          </div>
+
           {TIERS.map(t => (
             <div key={t.value} className="border border-gray-200 rounded-xl p-4">
-              <p className="text-sm font-bold text-gray-800 mb-3">{t.label}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">Meta</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form[t.value]?.meta ?? ''}
-                    onChange={e => setForm(f => ({ ...f, [t.value]: { ...f[t.value], meta: e.target.value } }))}
-                    className="form-field"
-                  />
-                </div>
-                <div>
-                  <label className="field-label">Progresso</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form[t.value]?.progresso ?? ''}
-                    onChange={e => setForm(f => ({ ...f, [t.value]: { ...f[t.value], progresso: e.target.value } }))}
-                    className="form-field"
-                  />
-                </div>
-              </div>
+              <label className="field-label">Meta — {t.label}</label>
+              <input
+                type="number"
+                min="0"
+                value={metaForm[t.value] ?? ''}
+                onChange={e => setMetaForm(f => ({ ...f, [t.value]: e.target.value }))}
+                className="form-field"
+              />
             </div>
           ))}
         </div>

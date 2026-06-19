@@ -108,7 +108,7 @@ export default function Historico({ historico, onExcluir }: Props) {
   }, [preset, dateFrom, dateTo, search])
 
   function handleBaixarPdf() {
-    baixarTransferenciasPdf(transferencias, periodoLabel)
+    void baixarTransferenciasPdf(transferencias, periodoLabel)
   }
 
   const presets: { id: Preset; label: string }[] = [

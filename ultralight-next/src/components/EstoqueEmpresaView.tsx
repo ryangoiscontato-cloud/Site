@@ -130,11 +130,18 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Ultralight" width={40} height={40} className="rounded-xl object-contain w-10 h-10 flex-shrink-0" />
+            <div className="hidden md:block min-w-0">
+              <span className="block text-lg sm:text-[1.35rem] font-extrabold text-[#0f2d5e] leading-none tracking-tight">ULTRALIGHT</span>
+              <span className="block text-[0.6rem] sm:text-[0.65rem] text-gray-400 uppercase tracking-[0.12em] mt-0.5">Gestão de Produção</span>
+            </div>
+            <span className="text-gray-300 hidden md:block">|</span>
             <button
               onClick={onBack}
-              className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex-shrink-0"
             >
               <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 111.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
@@ -142,9 +149,9 @@ export default function EstoqueEmpresaView({ empresa, user, onBack }: Props) {
               Voltar
             </button>
             <span className="text-gray-300">|</span>
-            <h1 className="text-base sm:text-lg font-bold text-[#0f2d5e] tracking-tight">Estoque &middot; {empresa}</h1>
+            <h1 className="text-base sm:text-lg font-bold text-[#0f2d5e] tracking-tight truncate">Estoque &middot; {empresa}</h1>
           </div>
-          <span className="hidden sm:block text-sm font-semibold text-gray-700">{user.username}</span>
+          <span className="hidden sm:block text-sm font-semibold text-gray-700 flex-shrink-0">{user.username}</span>
         </div>
       </header>
 

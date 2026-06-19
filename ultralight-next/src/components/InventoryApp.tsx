@@ -234,7 +234,7 @@ export default function InventoryApp() {
     : tab === 'produtos'  ? 'Produtos'
     : tab === 'historico' ? 'Histórico'
     : tab === 'producao'  ? 'Produção'
-    : 'Dashboard'
+    : 'Metas'
 
   const OfflineBanner = () => !isOnline ? (
     <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 flex items-center justify-center gap-2">
@@ -252,11 +252,18 @@ export default function InventoryApp() {
     return (
       <div className="min-h-screen bg-gray-100">
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Ultralight" width={40} height={40} className="rounded-xl object-contain w-10 h-10 flex-shrink-0" />
+              <div className="hidden sm:block min-w-0">
+                <span className="block text-lg sm:text-[1.35rem] font-extrabold text-[#0f2d5e] leading-none tracking-tight">ULTRALIGHT</span>
+                <span className="block text-[0.6rem] sm:text-[0.65rem] text-gray-400 uppercase tracking-[0.12em] mt-0.5">Gestão de Produção</span>
+              </div>
+              <span className="text-gray-300 hidden sm:block">|</span>
               <button
                 onClick={() => setShowEstoques(false)}
-                className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                className="flex items-center gap-1.5 text-sm text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex-shrink-0"
               >
                 <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 111.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
@@ -264,7 +271,7 @@ export default function InventoryApp() {
                 Voltar
               </button>
             </div>
-            <span className="hidden sm:block text-sm font-semibold text-gray-700">{user.username}</span>
+            <span className="hidden sm:block text-sm font-semibold text-gray-700 flex-shrink-0">{user.username}</span>
           </div>
         </header>
 
@@ -342,8 +349,8 @@ export default function InventoryApp() {
 
           <div className="grid grid-cols-2 gap-4">
             {([
-              { tab: 'dashboard' as TabId, label: 'Dashboard', sub: 'Metas e visão geral', color: 'bg-purple-100 text-purple-600', icon: (
-                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              { tab: 'dashboard' as TabId, label: 'Metas', sub: 'Basic, Advanced e Premium', color: 'bg-purple-100 text-purple-600', icon: (
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
               )},
               { tab: 'saldo' as TabId, label: 'Saldo em Estoque', sub: 'Ver todos os produtos', color: 'bg-blue-100 text-blue-600', icon: (
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
@@ -482,7 +489,7 @@ export default function InventoryApp() {
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>
         )}
         {tab === 'dashboard' && (
-          <Dashboard produtos={produtos} historico={historico} onTabChange={setTab} metas={metas} salvarMeta={salvarMeta} toast={toast} />
+          <Dashboard metas={metas} salvarMeta={salvarMeta} toast={toast} />
         )}
         {tab === 'saldo' && (
           <SaldoEstoque

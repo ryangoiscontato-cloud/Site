@@ -78,7 +78,7 @@ export function useMetas() {
       ? await supabase.from('metas').update({ meta, progresso, atualizado_em: agora }).eq('id', existente.id)
       : await supabase.from('metas').insert({ id: uid(), tier, mes, ano, meta, progresso, atualizado_em: agora })
 
-    if (error) return { ok: false, error: 'Erro ao salvar meta.' }
+    if (error) return { ok: false, error: `Erro ao salvar meta: ${error.message}` }
     await fetchAll()
     return { ok: true }
   }, [metas, fetchAll])

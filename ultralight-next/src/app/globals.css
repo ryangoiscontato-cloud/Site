@@ -97,6 +97,13 @@ body { @apply antialiased; }
 /* Prevent iOS Safari from zooming in when focusing inputs (requires font-size >= 16px) */
 input, select, textarea { font-size: 16px; }
 
+/* ── Cursor: pointer on every clickable element, site-wide ── */
+button:not(:disabled), a, [role="button"], select, summary, label[for],
+input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"] {
+  cursor: pointer;
+}
+button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
+
 /* ── App view (Electron desktop) ── disable text selection, keep it usable in form fields */
 html.electron-app, html.electron-app * {
   -webkit-user-select: none;
