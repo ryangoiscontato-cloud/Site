@@ -342,6 +342,9 @@ export default function InventoryApp() {
 
           <div className="grid grid-cols-2 gap-4">
             {([
+              { tab: 'dashboard' as TabId, label: 'Dashboard', sub: 'Metas e visão geral', color: 'bg-purple-100 text-purple-600', icon: (
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              )},
               { tab: 'saldo' as TabId, label: 'Saldo em Estoque', sub: 'Ver todos os produtos', color: 'bg-blue-100 text-blue-600', icon: (
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
               )},
