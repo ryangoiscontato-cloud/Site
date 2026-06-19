@@ -12,8 +12,9 @@ function loadLogo(): Promise<HTMLImageElement | null> {
   })
 }
 
-const BLUE: [number, number, number] = [37, 67, 156]
-const BLUE_LIGHT: [number, number, number] = [235, 239, 250]
+const RED: [number, number, number] = [214, 16, 24]
+const RED_LIGHT: [number, number, number] = [253, 232, 232]
+const RED_TINT_TEXT: [number, number, number] = [252, 205, 205]
 
 export async function baixarTransferenciasPdf(transferencias: Movimento[], periodoLabel: string) {
   const logo = await loadLogo()
@@ -24,7 +25,7 @@ export async function baixarTransferenciasPdf(transferencias: Movimento[], perio
   const margin = 32
 
   // ── Cabeçalho com logo e nome do sistema ──
-  doc.setFillColor(...BLUE)
+  doc.setFillColor(...RED)
   doc.rect(0, 0, pageWidth, 58, 'F')
 
   if (logo) {
@@ -38,12 +39,12 @@ export async function baixarTransferenciasPdf(transferencias: Movimento[], perio
   doc.text('ULTRALIGHT', textX, 26)
 
   doc.setFontSize(8)
-  doc.setTextColor(199, 210, 254)
+  doc.setTextColor(...RED_TINT_TEXT)
   doc.setFont('helvetica', 'normal')
   doc.text('GESTÃO DE PRODUÇÃO · Relatório de Transferências', textX, 38)
 
   doc.setFontSize(9)
-  doc.setTextColor(199, 210, 254)
+  doc.setTextColor(...RED_TINT_TEXT)
   doc.setFont('helvetica', 'normal')
   doc.text(periodoLabel, pageWidth - margin, 38, { align: 'right' })
 
@@ -64,10 +65,10 @@ export async function baixarTransferenciasPdf(transferencias: Movimento[], perio
     for (const [empresa, movs] of [...porEmpresa.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
       if (cursorY > pageHeight - 90) { doc.addPage(); cursorY = 44 }
 
-      doc.setFillColor(...BLUE_LIGHT)
+      doc.setFillColor(...RED_LIGHT)
       doc.roundedRect(margin, cursorY - 11, pageWidth - margin * 2, 18, 3, 3, 'F')
       doc.setFontSize(10)
-      doc.setTextColor(...BLUE)
+      doc.setTextColor(...RED)
       doc.setFont('helvetica', 'bold')
       doc.text(empresa, margin + 8, cursorY + 1)
 
@@ -78,7 +79,7 @@ export async function baixarTransferenciasPdf(transferencias: Movimento[], perio
         body: movs
           .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
           .map(m => [m.produtoNome, String(m.qtd), fmtDate(m.data)]),
-        headStyles: { fillColor: BLUE, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        headStyles: { fillColor: RED, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         styles: { fontSize: 8, cellPadding: 3.5, textColor: [55, 65, 81] },
         theme: 'grid',
