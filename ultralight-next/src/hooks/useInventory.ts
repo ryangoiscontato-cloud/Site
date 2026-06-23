@@ -244,7 +244,7 @@ export function useInventory(currentUser: Usuario | null, empresa: EstoqueScope 
     if (!supabase) return { ok: false, error: 'Supabase não configurado.' }
     const produto = produtos.find(p => p.id === produtoId)
     if (!produto) return { ok: false, error: 'Produto não encontrado.' }
-    const novoSaldo = produto.saldo - qtd
+    const novoSaldo = Math.max(0, produto.saldo - qtd)
     const u = userRef.current
 
     const histRow = {

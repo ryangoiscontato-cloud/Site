@@ -2,6 +2,8 @@ export type Empresa = 'PESTLINE' | 'ULTRALIGHT' | 'UL BRASIL' | 'ULTRA FOODS' | 
 
 export const EMPRESAS: Empresa[] = ['PESTLINE', 'ULTRALIGHT', 'UL BRASIL', 'ULTRA FOODS', 'PESTSTORE', 'TECNOFLY']
 
+export const RESPONSAVEIS: string[] = ['Ryan', 'Leonardo', 'Vinicius', 'Debora', 'Noemi']
+
 // Escopos de estoque que não são empresas (ex.: estoque interno de materiais do Almoxarifado).
 export type EstoqueScope = Empresa | 'ALMOXARIFADO'
 

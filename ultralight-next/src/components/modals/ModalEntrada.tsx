@@ -9,7 +9,7 @@ interface Props {
   produtos: Produto[]
   presetProdutoId?: string
   onClose: () => void
-  onConfirm: (produtoId: string, qtd: number, obs: string) => void
+  onConfirm: (produtoId: string, qtd: number, obs: string) => void | Promise<void>
 }
 
 export default function ModalEntrada({ open, produtos, presetProdutoId, onClose, onConfirm }: Props) {
@@ -17,6 +17,7 @@ export default function ModalEntrada({ open, produtos, presetProdutoId, onClose,
   const [qtd, setQtd]             = useState('')
   const [obs, setObs]             = useState('')
   const [errors, setErrors]       = useState<Record<string, string>>({})
+  const [loading, setLoading]     = useState(false)
 
   const produto = produtos.find(p => p.id === produtoId)
 
@@ -24,7 +25,7 @@ export default function ModalEntrada({ open, produtos, presetProdutoId, onClose,
   useEffect(() => { produtosRef.current = produtos }, [produtos])
 
   useEffect(() => {
-    if (open) { setProdutoId(presetProdutoId || ''); setQtd(''); setObs(''); setErrors({}) }
+    if (open) { setProdutoId(presetProdutoId || ''); setQtd(''); setObs(''); setErrors({}); setLoading(false) }
   }, [open, presetProdutoId])
 
   useEffect(() => {
@@ -65,12 +66,18 @@ export default function ModalEntrada({ open, produtos, presetProdutoId, onClose,
     return () => document.removeEventListener('keydown', onKey)
   }, [open])
 
-  function handleConfirm() {
+  async function handleConfirm() {
+    if (loading) return
     const errs: Record<string, string> = {}
     if (!produtoId) errs.produto = 'Selecione um produto'
     if (!qtd || Number(qtd) <= 0) errs.qtd = 'Informe uma quantidade válida'
     if (Object.keys(errs).length) { setErrors(errs); return }
-    onConfirm(produtoId, Number(qtd), obs.trim())
+    setLoading(true)
+    try {
+      await onConfirm(produtoId, Number(qtd), obs.trim())
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!open) return null
@@ -161,12 +168,13 @@ export default function ModalEntrada({ open, produtos, presetProdutoId, onClose,
           <button onClick={onClose} className="btn-cancel">Cancelar</button>
           <button
             onClick={handleConfirm}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-xl transition-colors"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
             </svg>
-            Confirmar Entrada
+            {loading ? 'Enviando...' : 'Confirmar Entrada'}
           </button>
         </div>
       </div>

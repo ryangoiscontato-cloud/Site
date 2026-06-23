@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { Produto, Empresa } from '@/lib/types'
-import { EMPRESAS } from '@/lib/types'
+import { EMPRESAS, RESPONSAVEIS } from '@/lib/types'
 import ProductSearchSelect from '@/components/ProductSearchSelect'
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
   requireDestino?: boolean
   empresaOrigem?: Empresa
   onClose: () => void
-  onConfirm: (produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) => void
+  onConfirm: (produtoId: string, qtd: number, obs: string, responsavel: string, empresaDestino: string) => void | Promise<void>
 }
 
 export default function ModalSaida({ open, produtos, presetProdutoId, requireDestino = true, empresaOrigem, onClose, onConfirm }: Props) {
@@ -23,6 +23,7 @@ export default function ModalSaida({ open, produtos, presetProdutoId, requireDes
   const [responsavel,    setResponsavel]    = useState('')
   const [empresaDestino, setEmpresaDestino] = useState('')
   const [errors,         setErrors]         = useState<Record<string, string>>({})
+  const [loading,        setLoading]        = useState(false)
 
   const produto = produtos.find(p => p.id === produtoId)
 
@@ -32,7 +33,7 @@ export default function ModalSaida({ open, produtos, presetProdutoId, requireDes
   useEffect(() => {
     if (open) {
       setProdutoId(presetProdutoId || ''); setQtd(''); setObs('')
-      setResponsavel(''); setEmpresaDestino(''); setErrors({})
+      setResponsavel(''); setEmpresaDestino(''); setErrors({}); setLoading(false)
     }
   }, [open, presetProdutoId])
 
@@ -74,18 +75,23 @@ export default function ModalSaida({ open, produtos, presetProdutoId, requireDes
     return () => document.removeEventListener('keydown', onKey)
   }, [open])
 
-  function handleConfirm() {
+  async function handleConfirm() {
+    if (loading) return
     const errs: Record<string, string> = {}
     if (!produtoId)                         errs.produto        = 'Selecione um produto'
     const q = Number(qtd)
     if (!qtd || q <= 0)                     errs.qtd            = 'Informe uma quantidade válida'
-    else if (produto && q > produto.saldo)  errs.qtd            = `Saldo insuficiente. Disponível: ${produto.saldo} ${produto.unidade}`
     if (requireDestino) {
-      if (!responsavel.trim())              errs.responsavel    = 'Informe o nome do responsável'
+      if (!responsavel)                     errs.responsavel    = 'Selecione o responsável'
       if (!empresaDestino)                  errs.empresaDestino = 'Selecione a empresa de destino'
     }
     if (Object.keys(errs).length) { setErrors(errs); return }
-    onConfirm(produtoId, q, obs.trim(), requireDestino ? responsavel.trim() : '', requireDestino ? empresaDestino : '')
+    setLoading(true)
+    try {
+      await onConfirm(produtoId, q, obs.trim(), requireDestino ? responsavel : '', requireDestino ? empresaDestino : '')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!open) return null
@@ -163,13 +169,14 @@ export default function ModalSaida({ open, produtos, presetProdutoId, requireDes
           {requireDestino && (
             <div>
               <label className="field-label">Responsável *</label>
-              <input
-                type="text"
+              <select
                 value={responsavel}
                 onChange={e => setResponsavel(e.target.value)}
-                placeholder="Nome de quem está fazendo a movimentação"
                 className={`form-field ${errors.responsavel ? 'border-red-400 ring-2 ring-red-100' : ''}`}
-              />
+              >
+                <option value="">— Selecione o responsável —</option>
+                {RESPONSAVEIS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
               {errors.responsavel && <p className="field-error">{errors.responsavel}</p>}
             </div>
           )}
@@ -208,12 +215,13 @@ export default function ModalSaida({ open, produtos, presetProdutoId, requireDes
           <button onClick={onClose} className="btn-cancel">Cancelar</button>
           <button
             onClick={handleConfirm}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-semibold rounded-xl transition-colors"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
             </svg>
-            {requireDestino ? 'Confirmar Transferência' : 'Confirmar Saída'}
+            {loading ? 'Enviando...' : (requireDestino ? 'Confirmar Transferência' : 'Confirmar Saída')}
           </button>
         </div>
       </div>
